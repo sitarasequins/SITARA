@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<!-- saved from url=(0030)file:///D:/sitara_jsonbin.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitara Sequins</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCCowfX1uhxB4UMGmeV5fUhnw-KBGrrUxA",
+    authDomain: "sitara-sequins.firebaseapp.com",
+    projectId: "sitara-sequins",
+    storageBucket: "sitara-sequins.firebasestorage.app",
+    messagingSenderId: "177449046833",
+    appId: "1:177449046833:web:146a9f8e0719593e06d610"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const DATA_DOC = doc(db, 'sitara', 'appdata');
+
+  // Expose to global scope for use by app JS
+  window._firestore = { db, doc, setDoc, getDoc, onSnapshot, DATA_DOC };
+  window._firebaseReady = true;
+
+  // Listen for real-time updates from other devices
+  onSnapshot(DATA_DOC, (snap) => {
+    if(!snap.exists()) return;
+    if(window._skipNextSnapshot){ window._skipNextSnapshot=false; return; }
+    const data = snap.data();
+    if(data){
+      window.colors       = data.colors       || window.colors;
+      window.shapes       = data.shapes       || window.shapes;
+      window.orders       = data.orders       || window.orders;
+      window.parties      = data.parties      || window.parties;
+      window.invoices     = data.invoices     || window.invoices;
+      window.nextOid      = data.nextOid      || window.nextOid;
+      window.nextPaId     = data.nextPaId     || window.nextPaId;
+      window.nextInvNum   = data.nextInvNum   || window.nextInvNum;
+      window.nextInvoiceNum = data.nextInvoiceNum || window.nextInvoiceNum;
+      if(window.renderAll) window.renderAll();
+      window.setSyncStatus('saved','☁ Synced');
+      setTimeout(()=>window.setSyncStatus('','☁ Cloud'), 2000);
+    }
+  });
+</script>
+<link rel="stylesheet" href="./Sitara Sequins_files/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px}
+:root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ececec;--border:#e0e0e0;--border2:#ccc;--text:#1a1a1a;--text2:#555;--text3:#999;--blue:#2563eb;--blue-bg:#eff6ff;--blue-border:#bfdbfe;--radius:8px;--radius-lg:12px}
+/* Setup screen */
+#setup-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:#f5f5f5}
+.setup-box{background:#fff;border-radius:16px;padding:32px;max-width:440px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.10)}
+.setup-logo{font-size:22px;font-weight:700;margin-bottom:4px}
+.setup-logo span{font-weight:400;color:#999}
+.setup-sub{font-size:13px;color:#888;margin-bottom:24px}
+.setup-step{background:#f8f8f8;border-radius:10px;padding:14px 16px;margin-bottom:12px;font-size:13px;line-height:1.6;color:#444}
+.setup-step b{color:#1a1a1a}
+.setup-step code{background:#e8e8e8;padding:1px 6px;border-radius:4px;font-size:12px;font-family:monospace}
+.setup-field{margin-bottom:14px}
+.setup-field label{display:block;font-size:12px;font-weight:500;color:#666;margin-bottom:5px}
+.setup-field input{width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;transition:border .2s}
+.setup-field input:focus{border-color:#2563eb}
+.setup-btn{width:100%;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
+.setup-btn:hover{background:#1d4ed8}
+.setup-err{color:#dc2626;font-size:12px;margin-top:8px;display:none}
+/* App */
+#app{display:none;max-width:1100px;margin:0 auto;padding:16px}
+.topbar-app{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.app-title{font-size:16px;font-weight:700}
+.app-title span{font-weight:400;color:#999}
+.sync-status{font-size:11px;padding:3px 10px;border-radius:99px;background:#f0f0f0;color:#888}
+.sync-status.saving{background:#fffbeb;color:#92400e}
+.sync-status.saved{background:#f0fdf4;color:#166534}
+.sync-status.error{background:#fef2f2;color:#dc2626}
+.tabs{display:flex;border-bottom:1.5px solid #e0e0e0;margin-bottom:16px;overflow-x:auto;gap:0}
+.tab{font-size:13px;padding:9px 16px;cursor:pointer;color:#888;border-bottom:2.5px solid transparent;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;font-weight:500;transition:color .15s}
+.tab.active{color:#2563eb;border-bottom-color:#2563eb}
+.tab:hover{color:#1a1a1a}
+.view{display:none}
+.view.active{display:block}
+/* Buttons */
+.btn{height:32px;padding:0 14px;font-size:13px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#333;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-weight:500;transition:background .15s}
+.btn:hover{background:#f5f5f5}
+.btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+.btn-primary:hover{background:#1d4ed8}
+.btn-danger{color:#dc2626;border-color:#fecaca}
+.btn-danger:hover{background:#fef2f2}
+.btn-sm{height:26px;font-size:11px;padding:0 10px}
+/* Stats */
+.stat{background:#fff;border-radius:8px;padding:10px 13px;border:1px solid #e8e8e8}
+.stat-label{font-size:11px;color:#999;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
+.stat-val{font-size:18px;font-weight:700;color:#1a1a1a}
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.05em;padding:6px 8px;border-bottom:1.5px solid #e8e8e8}
+td{padding:9px 8px;border-bottom:1px solid #f0f0f0;color:#1a1a1a;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+/* Badges */
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px}
+.badge-pending{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.badge-delivered{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+/* Split layout */
+.split{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+@media(max-width:720px){.split{grid-template-columns:1fr}}
+.form-panel{background:#fff;border-radius:12px;padding:16px;position:sticky;top:12px;border:1px solid #e8e8e8;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.form-panel h4{font-size:14px;font-weight:600;margin-bottom:14px;color:#1a1a1a}
+/* Form fields */
+.field{margin-bottom:11px}
+.field label{display:block;font-size:12px;font-weight:500;color:#666;margin-bottom:4px}
+.field input,.field select{width:100%;font-size:13px;padding:7px 10px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#1a1a1a;outline:none;transition:border .15s}
+.field input:focus,.field select:focus{border-color:#2563eb}
+/* Item rows */
+.item-hdr{display:grid;grid-template-columns:1fr 1fr 62px 62px 24px;gap:5px;margin-bottom:4px}
+.item-hdr span{font-size:11px;color:#999;font-weight:500}
+.item-row{display:grid;grid-template-columns:1fr 1fr 62px 62px 24px;gap:5px;margin-bottom:6px;align-items:center}
+.item-row select,.item-row input{font-size:12px;padding:5px 7px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#1a1a1a;width:100%}
+.item-del{background:none;border:none;cursor:pointer;color:#bbb;font-size:14px;padding:2px;border-radius:4px}
+.item-del:hover{color:#dc2626;background:#fef2f2}
+.add-item-btn{font-size:12px;color:#2563eb;background:none;border:none;cursor:pointer;padding:3px 0;margin-top:2px;font-weight:500}
+/* Filter buttons */
+.fbtn{font-size:12px;padding:4px 12px;border-radius:99px;border:1.5px solid #ddd;background:none;color:#888;cursor:pointer;font-weight:500}
+.fbtn.active{border-color:#2563eb;color:#2563eb;background:#eff6ff}
+/* Tags */
+.tag-section{margin-bottom:22px}
+.tag-section h4{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:10px}
+.tag-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;min-height:28px}
+.tag{display:inline-flex;align-items:center;gap:5px;background:#f5f5f5;border:1.5px solid #e0e0e0;border-radius:99px;padding:4px 12px;font-size:13px;color:#333;font-weight:500}
+.tag-del{background:none;border:none;cursor:pointer;color:#bbb;font-size:11px;line-height:1;padding:0;margin-left:2px}
+.tag-del:hover{color:#dc2626}
+.tag-add-row{display:flex;gap:7px}
+.tag-add-row input{flex:1;font-size:13px;padding:7px 10px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#1a1a1a;outline:none}
+.tag-add-row input:focus{border-color:#2563eb}
+/* Party rows */
+.party-row-item{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:8px;padding:10px 13px;border:1px solid #e8e8e8;margin-bottom:7px}
+/* Cards */
+.prod-card{background:#fff;border-radius:8px;padding:13px 15px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;border:1px solid #e8e8e8}
+.prod-item-label{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+.prod-meta{font-size:12px;color:#888}
+.prod-kg{font-size:20px;font-weight:700;color:#1a1a1a}
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:20px 22px;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18)}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:14px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+/* Detail rows */
+.detail-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:#999}
+.detail-val{color:#1a1a1a;font-weight:600}
+.detail-items-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.detail-items-table th{text-align:left;font-size:11px;color:#999;padding:4px 6px;border-bottom:1px solid #f0f0f0;font-weight:600}
+.detail-items-table td{padding:7px 6px;border-bottom:1px solid #f0f0f0}
+.detail-items-table tr:last-child td{border-bottom:none}
+/* Invoice print */
+.inv-wrap{background:#f5f5f5;border-radius:12px;padding:16px}
+.inv{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:28px 32px;max-width:560px;margin:0 auto}
+.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px}
+.inv-factory{font-size:20px;font-weight:700}
+.inv-sub{font-size:12px;color:#888;margin-top:2px}
+.inv-addr{font-size:12px;color:#aaa;margin-top:1px}
+.inv-meta{text-align:right;font-size:13px;color:#888;line-height:1.8}
+.inv-meta strong{color:#1a1a1a}
+.inv-to-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin-bottom:3px}
+.inv-to-name{font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:18px}
+.inv-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
+.inv-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#aaa;padding:6px 0;border-bottom:1px solid #e0e0e0;text-align:left}
+.inv-table td{padding:8px 0;border-bottom:1px solid #f0f0f0}
+.inv-table tr:last-child td{border-bottom:none}
+.inv-total-box{display:flex;justify-content:flex-end}
+.inv-total-inner{min-width:180px;border-top:1px solid #e0e0e0;padding-top:10px}
+.inv-total-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:#888}
+.inv-total-row.grand{font-size:15px;font-weight:700;color:#1a1a1a;padding-top:6px;border-top:1.5px solid #1a1a1a;margin-top:4px}
+.inv-footer{margin-top:26px;font-size:11px;color:#bbb;text-align:center;border-top:1px solid #f0f0f0;padding-top:12px}
+.inv-actions{display:flex;gap:9px;justify-content:flex-end;margin-bottom:12px}
+/* Admin panel */
+.admin-panel{background:#fff;border-radius:12px;padding:16px;border:1px solid #fecaca;margin-top:20px}
+.admin-panel h4{font-size:13px;font-weight:600;color:#dc2626;margin-bottom:12px}
+/* Misc */
+.empty{text-align:center;color:#bbb;font-size:13px;padding:28px 0}
+.save-ind{font-size:11px}
+/* Sort buttons */
+.sort-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;align-items:center}
+.sort-bar-label{font-size:11px;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+.sbtn{font-size:11px;padding:4px 11px;border-radius:99px;border:1.5px solid #ddd;background:#fff;color:#666;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
+.sbtn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
+.sbtn.active{border-color:#2563eb;color:#fff;background:#2563eb}
+.sbtn .arr{font-size:10px}
+.party-pending-card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;border:1px solid #e8e8e8;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.party-pending-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.party-pending-name{font-size:14px;font-weight:700;color:#1a1a1a}
+.party-pending-meta{font-size:11px;color:#999}
+.party-pending-table{width:100%;border-collapse:collapse;font-size:12px}
+.party-pending-table th{font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:3px 6px;border-bottom:1px solid #f0f0f0;text-align:left}
+.party-pending-table td{padding:6px 6px;border-bottom:1px solid #f8f8f8;vertical-align:middle}
+.party-pending-table tr:last-child td{border-bottom:none}
+.party-order-ref{display:inline-block;font-size:10px;color:#999;background:#f5f5f5;border-radius:4px;padding:1px 5px;margin-right:3px}
+/* POS print */
+@media print{
+  .pos-print #setup-screen,.pos-print #app>.topbar-app,.pos-print #app>.tabs,.pos-print .inv-actions,.pos-print .split .form-panel,.pos-print #tab-orders,.pos-print #tab-invoices,.pos-print #tab-catalog,.pos-print #tab-production,.pos-print .modal-bg,.pos-print #admin-btn{display:none!important}
+  .pos-print #view-invoice,.pos-print #view-ledger{display:block!important}
+  .pos-print .inv-wrap{background:white;padding:0}
+  .pos-print body{background:white}
+}
+@media print{
+  #setup-screen,#app>.topbar-app,#app>.tabs,.inv-actions,.split .form-panel,#tab-orders,#tab-invoices,#tab-catalog,#tab-production,.modal-bg,#admin-btn{display:none!important}
+  #view-invoice,#view-ledger{display:block!important}
+  .inv-wrap{background:white;padding:0}
+  body{background:white}
+}
+/* POS 80mm invoice — large bold font for thermal clarity */
+.pos-inv{width:76mm;margin:0 auto;padding:0 2mm;font-family:'Courier New',monospace;font-size:14px;font-weight:700;color:#000;background:#fff;box-sizing:border-box}
+.pos-inv .pos-title{text-align:center;font-size:22px;font-weight:700;margin-bottom:3px}
+.pos-inv .pos-sub{text-align:center;font-size:13px;font-weight:600;margin-bottom:3px;color:#333}
+.pos-inv .pos-divider{border:none;border-top:2px dashed #000;margin:5px 0}
+.pos-inv .pos-row{display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin:3px 0}
+.pos-inv .pos-row.bold{font-weight:700;font-size:14px}
+.pos-inv .pos-items-hdr{display:flex;font-size:13px;font-weight:700;border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:4px}
+.pos-inv .pos-item-row{display:flex;font-size:14px;font-weight:700;margin:5px 0;align-items:center;white-space:nowrap}
+.pos-inv .pos-col-item{flex:1;padding-right:4px}
+.pos-inv .pos-col-kg{width:52px;text-align:right;flex-shrink:0}
+.pos-inv .pos-col-rate{width:58px;text-align:right;flex-shrink:0}
+.pos-inv .pos-col-amt{width:66px;text-align:right;flex-shrink:0}
+.pos-inv .pos-col-item{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pos-inv .pos-footer{text-align:center;font-size:15px;font-weight:600;margin-top:8px;color:#333}
+@media print{
+  body.pos-mode{background:white!important}
+  body.pos-mode #view-invoice{display:block!important}
+  body.pos-mode .inv-actions{display:none!important}
+  body.pos-mode .inv-wrap{background:white!important;padding:0!important;border-radius:0!important}
+  body.pos-mode .inv{display:none!important}
+  body.pos-mode .pos-inv{display:block!important}
+  body.pos-mode #setup-screen,body.pos-mode #app>.topbar-app,body.pos-mode #app>.tabs,body.pos-mode #tab-orders,body.pos-mode #tab-invoices,body.pos-mode #tab-catalog,body.pos-mode #tab-production,body.pos-mode .modal-bg,body.pos-mode #admin-btn{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== SETUP SCREEN ===== -->
+<div id="setup-screen" style="display:none"></div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app" style="display: none;">
+  <div class="topbar-app">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="app-title">Sitara <span>Sequins</span></div>
+      <span class="sync-status " id="sync-status">☁ Cloud</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-sm" onclick="exportBackup()" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8" title="Download backup JSON">📤 Backup</button>
+      <button class="btn btn-sm" onclick="document.getElementById('restore-file-input').click()" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534" title="Restore from backup">📥 Restore</button>
+      <input type="file" id="restore-file-input" accept=".json" style="display:none" onchange="importBackup(this)">
+      <button class="btn btn-sm" onclick="document.getElementById('xls-file-input').click()" style="background:#fffbeb;border-color:#fde68a;color:#92400e">📥 Import XLS</button>
+      <input type="file" id="xls-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromXLS(this)">
+      <button class="btn btn-sm" id="admin-btn" onclick="openAdmin()">⚙ Admin</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" onclick="switchTab(&#39;orders&#39;,this)">Orders</button>
+    <button class="tab active" onclick="switchTab(&#39;invoices&#39;,this)">Invoices</button>
+    <button class="tab" onclick="switchTab(&#39;catalog&#39;,this)">Create</button>
+    <button class="tab" onclick="switchTab('production',this)">Pending Work</button>
+  </div>
+
+  <!-- ORDERS -->
+  <div id="tab-orders" class="view">
+    <div class="split">
+      <div class="form-panel">
+        <h4 id="order-form-title">New Order</h4>
+        <div class="field"><label>Party name</label>
+          <input id="f-party" list="party-dl" type="text" placeholder="Type or select party">
+          <datalist id="party-dl"><option value="dipiya store"></option><option value="Rahul gonda"></option><option value="Bhagat Moti"></option><option value="A to Z"></option><option value="AJAJ"></option><option value="Sitara Shop(Avinash)"></option><option value="Nawaj Button"></option><option value="Mudir"></option></datalist>
+        </div>
+        <div class="field"><label>Order date</label><input id="f-date" type="date"></div>
+        <div style="margin-top:4px">
+          <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:500">Items</div>
+          <div class="item-hdr"><span>Color</span><span>Shape</span><span>Kg</span><span></span></div>
+          <div id="items-container"><div class="item-row"><select><option value="og100" selected="">og100</option><option value="og10">og10</option><option value="dd16">dd16</option><option value="dd15">dd15</option><option value="dd28">dd28</option><option value="dd23">dd23</option><option value="Rcz Paani">Rcz Paani</option><option value="og66">og66</option><option value="og51">og51</option><option value="og135">og135</option><option value="og144">og144</option><option value="og34">og34</option><option value="og92">og92</option><option value="og24">og24</option><option value="og5">og5</option><option value="og19">og19</option><option value="dd17">dd17</option><option value="DD1">DD1</option><option value="DD8">DD8</option><option value="DD3">DD3</option><option value="DD43">DD43</option><option value="DD25">DD25</option><option value="DD2">DD2</option><option value="DD9">DD9</option><option value="Og33">Og33</option><option value="Og118">Og118</option><option value="Og17">Og17</option><option value="Og87">Og87</option><option value="Og98">Og98</option><option value="Og55">Og55</option><option value="Og6">Og6</option><option value="Og54">Og54</option><option value="Tg78">Tg78</option><option value="Og35">Og35</option><option value="Og133">Og133</option><option value="Og110">Og110</option><option value="Tg137">Tg137</option><option value="Og149">Og149</option><option value="White Pearl">White Pearl</option><option value="Og88">Og88</option></select><select><option value="1014" selected="">1014</option><option value="2n">2n</option><option value="3n">3n</option><option value="4n">4n</option><option value="4fc">4fc</option><option value="5fc">5fc</option><option value="4K">4K</option><option value="5n">5n</option><option value="1026">1026</option><option value="1027">1027</option><option value="6/1">6/1</option><option value="8/1">8/1</option></select>
+    <input type="number" min="0" step="0.01" value="1" placeholder="kg">
+    <button class="item-del" onclick="this.parentElement.remove()">✕</button></div></div>
+          <button class="add-item-btn" onclick="addItemRow()">+ Add item</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:13px">
+          <button class="btn" onclick="cancelOrderForm()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveOrder()" id="save-order-btn">Save order</button>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:#bbb" id="form-status-note">Status: Pending (auto)</div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="stat"><div class="stat-label">Pending Orders</div><div class="stat-val" id="s-pending" style="color:#d97706">0</div></div>
+            <div class="stat"><div class="stat-label">Parties</div><div class="stat-val" id="s-parties">0</div></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:12px;color:#888;font-weight:500">Filter by date:</label>
+            <input type="date" id="order-date-filter" onchange="renderOrders()"
+              style="padding:5px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
+            <button class="btn btn-sm" onclick="document.getElementById('order-date-filter').value='';renderOrders()">All</button>
+          </div>
+        </div>
+        <div id="pending-orders-list"></div>
+        <div id="empty-orders" class="empty" style="display: none;">No pending orders.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVOICES -->
+  <div id="tab-invoices" class="view active">
+    <div class="split">
+      <div class="form-panel">
+        <h4 id="inv-form-title">New Invoice</h4>
+        <div class="field"><label>Party name</label>
+          <select id="if-party" style="width:100%;font-size:13px;padding:7px 10px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#1a1a1a;outline:none"><option value="dipiya store">dipiya store</option><option value="Rahul gonda">Rahul gonda</option><option value="Bhagat Moti">Bhagat Moti</option><option value="A to Z">A to Z</option><option value="AJAJ">AJAJ</option><option value="Sitara Shop(Avinash)">Sitara Shop(Avinash)</option><option value="Nawaj Button">Nawaj Button</option><option value="Mudir">Mudir</option></select>
+        </div>
+        <div class="field"><label>Invoice date</label><input id="if-date" type="date"></div>
+        <div style="margin-top:4px">
+          <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:500">Items</div>
+          <div class="item-hdr"><span>Color</span><span>Shape</span><span>Kg</span><span></span></div>
+          <div id="inv-items-container"><div class="item-row"><select onchange="updateInvFormTotal()"><option value="og100" selected="">og100</option><option value="og10">og10</option><option value="dd16">dd16</option><option value="dd15">dd15</option><option value="dd28">dd28</option><option value="dd23">dd23</option><option value="Rcz Paani">Rcz Paani</option><option value="og66">og66</option><option value="og51">og51</option><option value="og135">og135</option><option value="og144">og144</option><option value="og34">og34</option><option value="og92">og92</option><option value="og24">og24</option><option value="og5">og5</option><option value="og19">og19</option><option value="dd17">dd17</option><option value="DD1">DD1</option><option value="DD8">DD8</option><option value="DD3">DD3</option><option value="DD43">DD43</option><option value="DD25">DD25</option><option value="DD2">DD2</option><option value="DD9">DD9</option><option value="Og33">Og33</option><option value="Og118">Og118</option><option value="Og17">Og17</option><option value="Og87">Og87</option><option value="Og98">Og98</option><option value="Og55">Og55</option><option value="Og6">Og6</option><option value="Og54">Og54</option><option value="Tg78">Tg78</option><option value="Og35">Og35</option><option value="Og133">Og133</option><option value="Og110">Og110</option><option value="Tg137">Tg137</option><option value="Og149">Og149</option><option value="White Pearl">White Pearl</option><option value="Og88">Og88</option></select>
+    <select onchange="updateInvFormTotal()"><option value="1014" selected="">1014</option><option value="2n">2n</option><option value="3n">3n</option><option value="4n">4n</option><option value="4fc">4fc</option><option value="5fc">5fc</option><option value="4K">4K</option><option value="5n">5n</option><option value="1026">1026</option><option value="1027">1027</option><option value="6/1">6/1</option><option value="8/1">8/1</option></select>
+    <input type="number" min="0" step="0.01" value="1" oninput="updateInvFormTotal()">
+    <input type="number" min="0" value="0" oninput="updateInvFormTotal()">
+    <button class="item-del" onclick="this.parentElement.remove();updateInvFormTotal()">✕</button></div></div>
+          <button class="add-item-btn" onclick="addInvItemRow()">+ Add item</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:13px">
+          <span style="font-size:13px;color:#888">Total: <strong id="inv-form-total" style="color:#1a1a1a">₹0</strong></span>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="cancelInvForm()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveInvoice()" id="save-inv-btn">Save invoice</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+          <div style="display:flex;gap:8px">
+            <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="si-total">1</div></div>
+            <div class="stat"><div class="stat-label">Amount</div><div class="stat-val" id="si-amount" style="font-size:15px">₹1,250</div></div>
+          </div>
+          <button class="btn btn-sm" onclick="exportTallyXML()" style="background:#7c3aed;color:#fff;border-color:#7c3aed">📤 Export Tally XML</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th style="width:5%">#</th><th style="width:12%">Inv#</th>
+            <th style="width:20%">Party</th><th style="width:13%">Date</th>
+            <th style="width:13%">Amount</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="inv-body"><tr>
+      <td style="color:#bbb;font-size:12px">1</td>
+      <td style="color:#888;font-size:12px">INV-0003</td>
+      <td style="font-weight:600">Rahul gonda</td>
+      <td style="color:#888">2026-05-23</td>
+      <td>₹1,250</td>
+      <td><div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="loadInvIntoForm(1779523479759)">Edit</button>
+        <button class="btn btn-sm btn-primary" onclick="viewInvoice(1779523479759)">Print</button>
+        <button class="btn btn-sm btn-danger" onclick="delInvoice(1779523479759)">Delete</button>
+      </div></td>
+    </tr></tbody>
+        </table>
+        <div id="empty-invlist" class="empty" style="display: none;">No invoices yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE -->
+  <div id="tab-catalog" class="view">
+    <div class="tag-section">
+      <h4>Colors</h4>
+      <div class="tag-grid" id="color-tags"><span class="tag">og100<button class="tag-del" onclick="delColor(&#39;og100&#39;)">✕</button></span><span class="tag">og10<button class="tag-del" onclick="delColor(&#39;og10&#39;)">✕</button></span><span class="tag">dd16<button class="tag-del" onclick="delColor(&#39;dd16&#39;)">✕</button></span><span class="tag">dd15<button class="tag-del" onclick="delColor(&#39;dd15&#39;)">✕</button></span><span class="tag">dd28<button class="tag-del" onclick="delColor(&#39;dd28&#39;)">✕</button></span><span class="tag">dd23<button class="tag-del" onclick="delColor(&#39;dd23&#39;)">✕</button></span><span class="tag">Rcz Paani<button class="tag-del" onclick="delColor(&#39;Rcz Paani&#39;)">✕</button></span><span class="tag">og66<button class="tag-del" onclick="delColor(&#39;og66&#39;)">✕</button></span><span class="tag">og51<button class="tag-del" onclick="delColor(&#39;og51&#39;)">✕</button></span><span class="tag">og135<button class="tag-del" onclick="delColor(&#39;og135&#39;)">✕</button></span><span class="tag">og144<button class="tag-del" onclick="delColor(&#39;og144&#39;)">✕</button></span><span class="tag">og34<button class="tag-del" onclick="delColor(&#39;og34&#39;)">✕</button></span><span class="tag">og92<button class="tag-del" onclick="delColor(&#39;og92&#39;)">✕</button></span><span class="tag">og24<button class="tag-del" onclick="delColor(&#39;og24&#39;)">✕</button></span><span class="tag">og5<button class="tag-del" onclick="delColor(&#39;og5&#39;)">✕</button></span><span class="tag">og19<button class="tag-del" onclick="delColor(&#39;og19&#39;)">✕</button></span><span class="tag">dd17<button class="tag-del" onclick="delColor(&#39;dd17&#39;)">✕</button></span><span class="tag">DD1<button class="tag-del" onclick="delColor(&#39;DD1&#39;)">✕</button></span><span class="tag">DD8<button class="tag-del" onclick="delColor(&#39;DD8&#39;)">✕</button></span><span class="tag">DD3<button class="tag-del" onclick="delColor(&#39;DD3&#39;)">✕</button></span><span class="tag">DD43<button class="tag-del" onclick="delColor(&#39;DD43&#39;)">✕</button></span><span class="tag">DD25<button class="tag-del" onclick="delColor(&#39;DD25&#39;)">✕</button></span><span class="tag">DD2<button class="tag-del" onclick="delColor(&#39;DD2&#39;)">✕</button></span><span class="tag">DD9<button class="tag-del" onclick="delColor(&#39;DD9&#39;)">✕</button></span><span class="tag">Og33<button class="tag-del" onclick="delColor(&#39;Og33&#39;)">✕</button></span><span class="tag">Og118<button class="tag-del" onclick="delColor(&#39;Og118&#39;)">✕</button></span><span class="tag">Og17<button class="tag-del" onclick="delColor(&#39;Og17&#39;)">✕</button></span><span class="tag">Og87<button class="tag-del" onclick="delColor(&#39;Og87&#39;)">✕</button></span><span class="tag">Og98<button class="tag-del" onclick="delColor(&#39;Og98&#39;)">✕</button></span><span class="tag">Og55<button class="tag-del" onclick="delColor(&#39;Og55&#39;)">✕</button></span><span class="tag">Og6<button class="tag-del" onclick="delColor(&#39;Og6&#39;)">✕</button></span><span class="tag">Og54<button class="tag-del" onclick="delColor(&#39;Og54&#39;)">✕</button></span><span class="tag">Tg78<button class="tag-del" onclick="delColor(&#39;Tg78&#39;)">✕</button></span><span class="tag">Og35<button class="tag-del" onclick="delColor(&#39;Og35&#39;)">✕</button></span><span class="tag">Og133<button class="tag-del" onclick="delColor(&#39;Og133&#39;)">✕</button></span><span class="tag">Og110<button class="tag-del" onclick="delColor(&#39;Og110&#39;)">✕</button></span><span class="tag">Tg137<button class="tag-del" onclick="delColor(&#39;Tg137&#39;)">✕</button></span><span class="tag">Og149<button class="tag-del" onclick="delColor(&#39;Og149&#39;)">✕</button></span><span class="tag">White Pearl<button class="tag-del" onclick="delColor(&#39;White Pearl&#39;)">✕</button></span><span class="tag">Og88<button class="tag-del" onclick="delColor(&#39;Og88&#39;)">✕</button></span></div>
+      <div class="tag-add-row">
+        <input id="new-color" type="text" placeholder="e.g. Gold">
+        <button class="btn btn-primary" onclick="addColor()">Add</button>
+      </div>
+    </div>
+    <div class="tag-section">
+      <h4>Shapes</h4>
+      <div class="tag-grid" id="shape-tags"><span class="tag">1014<button class="tag-del" onclick="delShape(&#39;1014&#39;)">✕</button></span><span class="tag">2n<button class="tag-del" onclick="delShape(&#39;2n&#39;)">✕</button></span><span class="tag">3n<button class="tag-del" onclick="delShape(&#39;3n&#39;)">✕</button></span><span class="tag">4n<button class="tag-del" onclick="delShape(&#39;4n&#39;)">✕</button></span><span class="tag">4fc<button class="tag-del" onclick="delShape(&#39;4fc&#39;)">✕</button></span><span class="tag">5fc<button class="tag-del" onclick="delShape(&#39;5fc&#39;)">✕</button></span><span class="tag">4K<button class="tag-del" onclick="delShape(&#39;4K&#39;)">✕</button></span><span class="tag">5n<button class="tag-del" onclick="delShape(&#39;5n&#39;)">✕</button></span><span class="tag">1026<button class="tag-del" onclick="delShape(&#39;1026&#39;)">✕</button></span><span class="tag">1027<button class="tag-del" onclick="delShape(&#39;1027&#39;)">✕</button></span><span class="tag">6/1<button class="tag-del" onclick="delShape(&#39;6/1&#39;)">✕</button></span><span class="tag">8/1<button class="tag-del" onclick="delShape(&#39;8/1&#39;)">✕</button></span></div>
+      <div class="tag-add-row">
+        <input id="new-shape" type="text" placeholder="e.g. Round">
+        <button class="btn btn-primary" onclick="addShape()">Add</button>
+      </div>
+    </div>
+    <div class="tag-section">
+      <h4>Parties</h4>
+      <div id="party-tags"><div class="party-row-item"><span style="font-size:13px;font-weight:600">dipiya store</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(1)">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(1)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(1)">Delete</button>
+      </div></div><div class="party-row-item"><span style="font-size:13px;font-weight:600">Rahul gonda</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(2)">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(2)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(2)">Delete</button>
+      </div></div><div class="party-row-item"><span style="font-size:13px;font-weight:600">Bhagat Moti</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(3)">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(3)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(3)">Delete</button>
+      </div></div><div class="party-row-item"><span style="font-size:13px;font-weight:600">A to Z</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(4)">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(4)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(4)">Delete</button>
+      </div></div><div class="party-row-item"><span style="font-size:13px;font-weight:600">AJAJ</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(5)">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(5)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(5)">Delete</button>
+      </div></div><div class="party-row-item"><span style="font-size:13px;font-weight:600">Sitara Shop(Avinash)</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(6)">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(6)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(6)">Delete</button>
+      </div></div><div class="party-row-item"><span style="font-size:13px;font-weight:600">Nawaj Button</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(7)">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(7)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(7)">Delete</button>
+      </div></div><div class="party-row-item"><span style="font-size:13px;font-weight:600">Mudir</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(8)">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(8)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(8)">Delete</button>
+      </div></div></div>
+      <div id="empty-parties" class="empty" style="display:none">No parties yet.</div>
+      <div class="tag-add-row" style="margin-top:8px">
+        <input id="new-party" type="text" placeholder="e.g. Riya Crafts">
+        <button class="btn btn-primary" onclick="addParty()">Add</button>
+      </div>
+    </div>
+    <div style="padding:12px;background:#f5f5f5;border-radius:8px;font-size:12px;color:#888">
+      Colors, shapes and parties are case-insensitive. Click View on a party to see all their orders &amp; invoices.
+    </div>
+  </div>
+
+  <!-- PENDING WORK -->
+  <div id="tab-production" class="view">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+      <div style="font-size:16px;font-weight:700;color:#1a1a1a">Pending Work</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <!-- View toggle -->
+        <div style="display:flex;border:1.5px solid #ddd;border-radius:8px;overflow:hidden">
+          <button id="pw-btn-item" onclick="setProdView('item')"
+            style="padding:6px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:#2563eb;color:#fff">
+            Item-wise
+          </button>
+          <button id="pw-btn-party" onclick="setProdView('party')"
+            style="padding:6px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:#fff;color:#888">
+            Party-wise
+          </button>
+        </div>
+        <!-- Sort -->
+        <button class="sbtn active" id="sb-qty-desc" onclick="setProdSort('qty-desc',this)">Qty <span class="arr">↓</span></button>
+        <button class="sbtn" id="sb-qty-asc" onclick="setProdSort('qty-asc',this)">Qty <span class="arr">↑</span></button>
+        <!-- Export & Print -->
+        <button class="btn btn-sm" onclick="exportPendingXLS()" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8">📊 Export XLS</button>
+        <button class="btn btn-sm" onclick="printPendingPOS('item')" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🧾 Item POS</button>
+        <button class="btn btn-sm" onclick="printPendingPOS('party')" style="background:#374151;color:#fff;border-color:#374151">🧾 Party POS</button>
+        <!-- Search -->
+        <input id="prod-search" type="text" placeholder="🔍 Search item / party…"
+          oninput="renderProduction()"
+          style="padding:6px 12px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;width:190px;outline:none">
+      </div>
+    </div>
+    <div id="prod-summary"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+    <div class="stat"><div class="stat-label">Orders (kg)</div><div class="stat-val" style="font-size:15px">48.00</div></div>
+    <div class="stat"><div class="stat-label">Invoiced (kg)</div><div class="stat-val" style="font-size:15px;color:#16a34a">0.00</div></div>
+    <div class="stat"><div class="stat-label">Net Pending (kg)</div><div class="stat-val" style="font-size:15px;color:#d97706">48.00</div></div>
+  </div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;color:#888">Net pending for 2026-05-23</div>
+      <div style="font-size:13px;font-weight:600">48.00 kg</div>
+    </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og17 &nbsp;◆ 3n</div>
+      <div class="prod-meta">Party: Bhagat Moti</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">5.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og87 &nbsp;◆ 3n</div>
+      <div class="prod-meta">Party: Bhagat Moti</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">5.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og98 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og55 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og33 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 og19 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og6 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og54 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Tg78 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og35 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og133 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 og51 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og110 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Tg137 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og149 &nbsp;◆ 2n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 White Pearl &nbsp;◆ 4n</div>
+      <div class="prod-meta">Party: Mudir</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">10.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div><div class="prod-card">
+    <div>
+      <div class="prod-item-label">🎨 Og88 &nbsp;◆ 4n</div>
+      <div class="prod-meta">Party: Nawaj Button</div>
+      
+    </div>
+    <div style="text-align:right">
+      <div class="prod-kg">2.00 kg</div>
+      <div style="font-size:12px;color:#888">pending</div>
+    </div>
+  </div></div>
+    <div id="empty-prod" class="empty" style="display:none">No orders for this date.</div>
+  </div>
+
+  <!-- INVOICE PRINT VIEW -->
+  <div id="view-invoice" style="display:none">
+    <div class="inv-actions">
+      <button class="btn" onclick="closeInvoice()">← Back</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨 Print A4</button>
+      <button class="btn" onclick="printPOS()" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🧾 POS 80mm</button>
+    </div>
+    <div class="inv-wrap"><div class="inv" id="inv-content"></div></div>
+    <div class="inv-wrap" style="display:none" id="pos-inv-wrap"><div class="pos-inv" id="pos-inv-content"></div></div>
+  </div>
+
+  <!-- LEDGER PRINT VIEW -->
+  <div id="view-ledger" style="display:none">
+    <div class="inv-actions">
+      <button class="btn" onclick="closeLedger()">← Back</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨 Print / PDF</button>
+    </div>
+    <div class="inv-wrap"><div class="inv" id="ledger-content"></div></div>
+  </div>
+
+  <!-- PARTY DETAIL MODAL -->
+  <div class="modal-bg" id="modal-party-detail">
+    <div class="modal" style="max-width:500px">
+      <h3 id="pd-title">Party</h3>
+      <div id="pd-body"></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal(&#39;modal-party-detail&#39;)">Close</button>
+        <button class="btn btn-primary" onclick="printPartyLedger()">🖨 Print ledger</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDER VIEW MODAL -->
+  <div class="modal-bg" id="modal-order-view">
+    <div class="modal">
+      <h3 id="ov-title">Order — Rahul gonda</h3>
+      <div id="ov-body">
+    <div class="detail-row"><span class="detail-label">Party</span><span class="detail-val">Rahul gonda</span></div>
+    <div class="detail-row"><span class="detail-label">Date</span><span class="detail-val">2026-05-22</span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-val"><span class="badge badge-pending">Pending</span></span></div>
+    <div class="detail-row"><span class="detail-label">Total</span><span class="detail-val">₹0</span></div>
+    <table class="detail-items-table">
+      <thead><tr><th>Color</th><th>Shape</th><th style="text-align:right">Kg</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody><tr>
+    <td>og66</td><td>4n</td>
+    <td style="text-align:right">2.50 kg</td>
+    <td style="text-align:right">₹0/kg</td>
+    <td style="text-align:right;font-weight:600">₹0</td>
+  </tr></tbody>
+    </table></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal(&#39;modal-order-view&#39;)">Close</button>
+        <button class="btn btn-primary" onclick="editFromOrderView()">Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN MODAL -->
+  <div class="modal-bg" id="modal-admin">
+    <div class="modal">
+      <h3>⚙ Admin Panel</h3>
+      <div id="admin-locked">
+        <div class="field"><label>Admin Password</label><input type="password" id="admin-pw-input" placeholder="Enter admin password"></div>
+        <div id="admin-pw-err" style="color:#dc2626;font-size:12px;display:none;margin-top:-6px;margin-bottom:8px">Wrong password</div>
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal(&#39;modal-admin&#39;)">Cancel</button>
+          <button class="btn btn-primary" onclick="unlockAdmin()">Unlock</button>
+        </div>
+      </div>
+            <div id="admin-unlocked" style="display:none">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">Change Password</div>
+        <div class="field">
+          <label>New Password</label>
+          <input type="password" id="admin-new-pw" placeholder="Enter new password">
+        </div>
+        <button class="btn btn-primary" onclick="changeAdminPw()" style="width:100%;justify-content:center;margin-bottom:8px">Update Password</button>
+        <div id="admin-pw-changed" style="color:#166534;font-size:12px;display:none;margin-bottom:12px">&#10003; Password updated</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#dc2626;margin-top:12px">Danger Zone</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-danger" onclick="adminClearOrders()" style="justify-content:center">&#128465; Delete ALL orders</button>
+          <button class="btn btn-danger" onclick="adminClearInvoices()" style="justify-content:center">&#128465; Delete ALL invoices</button>
+          <button class="btn btn-danger" onclick="adminResetAll()" style="justify-content:center">&#9888; Reset everything</button>
+        </div>
+        <div class="modal-actions"><button class="btn" onclick="closeModal(&#39;modal-admin&#39;)">Close</button></div>
+      </div>
+    </div>
+  </div>
+  <!-- IMPORT MODAL -->
+  <div class="modal-bg" id="modal-import">
+    <div class="modal" style="max-width:480px">
+      <h3 id="import-title">📥 Import XLS Data</h3>
+      <div id="import-body" style="font-size:13px;color:#555;line-height:1.7"></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal('modal-import')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG & STATE
+// ============================================================
+const LS_KEY = 'sitara_data';
+const LS_PW_KEY = 'sitara_pw';
+let ADMIN_PW = '';
+let saveTimer = null;
+
+// ── PRE-LOADED DATA (from Sitara_Sequins_Data.xlsx) ──────────────
+let colors = ["og100", "og10", "dd16", "dd15", "dd28", "dd23", "Rcz Paani", "og66", "og51", "og135", "og144", "og34", "og92", "og24", "og5", "og19", "dd17", "DD1", "DD8", "DD3", "DD43", "DD25", "DD2", "DD9", "Og33", "Og118", "Og17", "Og87", "Og98", "Og55", "Og6", "Og54", "Tg78", "Og35", "Og133", "Og110", "Tg137", "Og149", "White Pearl", "Og88"];
+let shapes = ["1014", "2n", "3n", "4n", "4fc", "5fc", "4K", "5n", "1026", "1027", "6/1", "8/1"];
+let parties = [
+  {
+    "id": 1,
+    "name": "dipiya store"
+  },
+  {
+    "id": 2,
+    "name": "Rahul gonda"
+  },
+  {
+    "id": 3,
+    "name": "Bhagat Moti"
+  },
+  {
+    "id": 4,
+    "name": "A to Z"
+  },
+  {
+    "id": 5,
+    "name": "AJAJ"
+  },
+  {
+    "id": 6,
+    "name": "Sitara Shop(Avinash)"
+  },
+  {
+    "id": 7,
+    "name": "Nawaj Button"
+  },
+  {
+    "id": 8,
+    "name": "Mudir"
+  }
+];
+let orders = [
+  {
+    "id": 1,
+    "invNum": 1,
+    "party": "dipiya store",
+    "date": "2026-05-22",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "og100",
+        "shape": "1014",
+        "kg": 1.0,
+        "price": 10.0
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "invNum": 2,
+    "party": "Rahul gonda",
+    "date": "2026-05-22",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "og66",
+        "shape": "4n",
+        "kg": 2.5,
+        "price": 0.0
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "invNum": 3,
+    "party": "Bhagat Moti",
+    "date": "2026-05-22",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "og100",
+        "shape": "1014",
+        "kg": 1,
+        "price": 0
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "invNum": 4,
+    "party": "A to Z",
+    "date": "2026-05-22",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "og100",
+        "shape": "1014",
+        "kg": 1,
+        "price": 0
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "invNum": 5,
+    "party": "Sitara Shop(Avinash)",
+    "date": "2026-05-22",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "og100",
+        "shape": "1014",
+        "kg": 1,
+        "price": 0
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "invNum": 6,
+    "party": "AJAJ",
+    "date": "2026-05-22",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "og100",
+        "shape": "1014",
+        "kg": 1,
+        "price": 0
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "invNum": 7,
+    "party": "Nawaj Button",
+    "date": "2026-05-22",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "og100",
+        "shape": "1014",
+        "kg": 1,
+        "price": 0
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "invNum": 8,
+    "party": "Bhagat Moti",
+    "date": "2026-05-23",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "Og17",
+        "shape": "3n",
+        "kg": 5.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og87",
+        "shape": "3n",
+        "kg": 5.0,
+        "price": 0.0
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "invNum": 9,
+    "party": "Mudir",
+    "date": "2026-05-23",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "Og98",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og55",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og33",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "og19",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og6",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og54",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Tg78",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og35",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og133",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "og51",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og110",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Tg137",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "Og149",
+        "shape": "2n",
+        "kg": 2.0,
+        "price": 0.0
+      },
+      {
+        "color": "White Pearl",
+        "shape": "4n",
+        "kg": 10.0,
+        "price": 0.0
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "invNum": 10,
+    "party": "Nawaj Button",
+    "date": "2026-05-23",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "Og88",
+        "shape": "4n",
+        "kg": 2.0,
+        "price": 0.0
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "invNum": 11,
+    "party": "",
+    "date": "",
+    "status": "Pending",
+    "items": [
+      {
+        "color": "og100",
+        "shape": "1014",
+        "kg": 1,
+        "price": 0
+      }
+    ]
+  }
+];
+let invoices = [
+  {
+    "id": 1779523479760,
+    "serial": 3,
+    "party": "Rahul gonda",
+    "date": "2026-05-23",
+    "items": [
+      {
+        "color": "og66",
+        "shape": "4n",
+        "kg": 2.5,
+        "price": 500.0
+      }
+    ],
+    "orderIds": []
+  }
+];
+let nextOid=12, nextPaId=9, nextInvNum=12, nextInvoiceNum=2;
+// ─────────────────────────────────────────────────────────────────────────
+
+let filt='all', editOid=null, editInvId=null, ovOid=null, pdPartyId=null;
+let prodSort='qty-desc'; // default sort for Today's Work
+
+// ============================================================
+// SETUP
+// ============================================================
+function showReconnect(){}
+
+function doSetup(){
+  const pw = document.getElementById('setup-adminpw').value;
+  if(pw === ADMIN_PW){
+    document.getElementById('setup-err').style.display='none';
+    startApp();
+  } else {
+    document.getElementById('setup-err').style.display='block';
+  }
+}
+
+// ============================================================
+// JSONBIN STORAGE
+// ============================================================
+function setSyncStatus(s, msg){
+  const el = document.getElementById('sync-status');
+  el.className = 'sync-status ' + s;
+  el.textContent = msg;
+}
+
+function saveToBin(){
+  // Always save to localStorage as backup
+  try{
+    const payload={colors,shapes,orders,parties,invoices,
+      nextOid,nextPaId,nextInvNum,nextInvoiceNum};
+    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+  } catch(e){}
+
+  // Save to Firebase if ready
+  if(window._firebaseReady && window._firestore){
+    setSyncStatus('saving','☁ Saving...');
+    const {setDoc, DATA_DOC} = window._firestore;
+    const payload={colors,shapes,orders,parties,invoices,
+      nextOid,nextPaId,nextInvNum,nextInvoiceNum,
+      updatedAt: new Date().toISOString()};
+    window._skipNextSnapshot = true;
+    setDoc(DATA_DOC, payload)
+      .then(()=>{
+        setSyncStatus('saved','☁ Saved');
+        setTimeout(()=>setSyncStatus('','☁ Cloud'), 2000);
+      })
+      .catch(e=>{
+        setSyncStatus('error','☁ Save failed');
+        console.error(e);
+      });
+  } else {
+    setSyncStatus('saved','✓ Saved locally');
+    setTimeout(()=>setSyncStatus('','Ready'), 1800);
+  }
+}
+
+function loadFromStorage(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    const data=JSON.parse(raw);
+    colors       = data.colors       || colors;
+    shapes       = data.shapes       || shapes;
+    orders       = data.orders       || orders;
+    parties      = data.parties      || parties;
+    invoices     = data.invoices     || invoices;
+    nextOid      = data.nextOid      || nextOid;
+    nextPaId     = data.nextPaId     || nextPaId;
+    nextInvNum   = data.nextInvNum   || nextInvNum;
+    nextInvoiceNum = data.nextInvoiceNum || nextInvoiceNum;
+    return true;
+  } catch(e){ return false; }
+}
+
+function saveAll(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToBin, 400);
+}
+
+// ============================================================
+// APP START
+// ============================================================
+function startApp(){
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  renderAll();
+  setTimeout(()=>{ resetOrderForm(); resetInvForm(); }, 100);
+}
+
+window.onload = function(){
+  ADMIN_PW = localStorage.getItem(LS_PW_KEY) || 'admin';
+  // Load from localStorage immediately so app starts fast
+  loadFromStorage();
+  startApp();
+  // Then load from Firebase in background (overwrites with latest cloud data)
+  setTimeout(async function(){
+    if(window._firebaseReady && window._firestore){
+      setSyncStatus('saving','☁ Loading...');
+      try{
+        const {getDoc, DATA_DOC} = window._firestore;
+        const snap = await getDoc(DATA_DOC);
+        if(snap.exists()){
+          const data = snap.data();
+          if(data){
+            colors       = data.colors       || colors;
+            shapes       = data.shapes       || shapes;
+            orders       = data.orders       || orders;
+            parties      = data.parties      || parties;
+            invoices     = data.invoices     || invoices;
+            nextOid      = data.nextOid      || nextOid;
+            nextPaId     = data.nextPaId     || nextPaId;
+            nextInvNum   = data.nextInvNum   || nextInvNum;
+            nextInvoiceNum = data.nextInvoiceNum || nextInvoiceNum;
+            renderAll();
+            setSyncStatus('saved','☁ Cloud loaded');
+            setTimeout(()=>setSyncStatus('','☁ Cloud'), 2000);
+          }
+        } else {
+          // No cloud data yet — save current pre-loaded data to Firebase
+          saveToBin();
+        }
+      } catch(e){
+        setSyncStatus('error','☁ Load failed');
+        console.error(e);
+      }
+    }
+  }, 1500);
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmt(n){return '₹'+Number(n).toLocaleString('en-IN');}
+function fmtKg(n){return parseFloat(n||0).toFixed(2)+' kg';}
+function invLabel(n){return 'SIT-'+String(n).padStart(4,'0');}
+function invNumLabel(n){return 'INV-'+String(n).padStart(4,'0');}
+function today(){return new Date().toISOString().split('T')[0];}
+function totalAmt(o){return o.items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFloat(i.price||0)),0);}
+function normalizeStr(s){return s.trim();}
+function ciIncludes(arr,val){return arr.some(x=>x.toLowerCase()===val.toLowerCase().trim());}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function renderAll(){renderOrders();renderInvoiceList();renderCatalog();renderParties();setToday();}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(t,el){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  ['orders','invoices','catalog','production'].forEach(id=>
+    document.getElementById('tab-'+id).classList.toggle('active',id===t));
+  document.getElementById('view-invoice').style.display='none';
+  document.getElementById('view-ledger').style.display='none';
+  if(t==='production') renderProduction();
+  if(t==='invoices'){ renderInvoiceList(); resetInvForm(); }
+  if(t==='orders') resetOrderForm();
+}
+function setF(f,el){
+  // kept for compatibility but no longer used in orders tab
+}
+
+// Build net-pending map: for each party+color+shape, orderedKg minus invoicedKg (across ALL dates)
+function buildPendingMap(){
+  // ordered[party][color||shape] = totalKg from all pending orders
+  const ordered={};
+  orders.filter(o=>o.status==='Pending').forEach(o=>{
+    if(!ordered[o.party])ordered[o.party]={};
+    o.items.forEach(i=>{
+      const k=i.color+'||'+i.shape;
+      if(!ordered[o.party][k])ordered[o.party][k]={ordKg:0,orderRefs:[],price:i.price};
+      ordered[o.party][k].ordKg+=parseFloat(i.kg||0);
+      ordered[o.party][k].orderRefs.push({id:o.id,invNum:o.invNum,date:o.date,kg:parseFloat(i.kg||0)});
+      // use latest price seen
+      if(i.price>0)ordered[o.party][k].price=i.price;
+    });
+  });
+  // invoiced[party][color||shape] = totalKg invoiced
+  const invoiced={};
+  invoices.forEach(inv=>{
+    if(!invoiced[inv.party])invoiced[inv.party]={};
+    (inv.items||[]).forEach(i=>{
+      const k=i.color+'||'+i.shape;
+      invoiced[inv.party][k]=(invoiced[inv.party][k]||0)+parseFloat(i.kg||0);
+    });
+  });
+  // net
+  const result={};
+  Object.keys(ordered).forEach(party=>{
+    const partyItems=[];
+    Object.entries(ordered[party]).forEach(([k,v])=>{
+      const invKg=(invoiced[party]&&invoiced[party][k])||0;
+      const netKg=v.ordKg-invKg;
+      if(netKg>0.001){
+        const [color,shape]=k.split('||');
+        partyItems.push({color,shape,ordKg:v.ordKg,invKg,netKg,price:v.price,refs:v.orderRefs});
+      }
+    });
+    if(partyItems.length)result[party]=partyItems;
+  });
+  return result;
+}
+
+function renderOrders(){
+  const dateFilter=(document.getElementById('order-date-filter')||{value:''}).value;
+  // Filter pending orders by date if selected
+  let filteredOrders=orders.filter(o=>o.status==='Pending');
+  if(dateFilter) filteredOrders=filteredOrders.filter(o=>o.date===dateFilter);
+
+  const container=document.getElementById('pending-orders-list');
+  const empty=document.getElementById('empty-orders');
+  const allPending=orders.filter(o=>o.status==='Pending');
+  document.getElementById('s-pending').textContent=allPending.length;
+  // count unique parties in filtered set
+  const filtParties=[...new Set(filteredOrders.map(o=>o.party))];
+  document.getElementById('s-parties').textContent=filtParties.length;
+
+  if(!filteredOrders.length){
+    container.innerHTML='';
+    empty.style.display='block';
+    empty.textContent=dateFilter?`No pending orders on ${dateFilter}.`:'No pending orders.';
+    return;
+  }
+  empty.style.display='none';
+
+  // Group by party
+  const byParty={};
+  filteredOrders.forEach(o=>{
+    if(!byParty[o.party])byParty[o.party]=[];
+    byParty[o.party].push(o);
+  });
+
+  container.innerHTML=Object.entries(byParty).map(([party,partyOrders])=>{
+    const orderRows=partyOrders.map(o=>{
+      const itemsStr=o.items.map(i=>`<span style="font-size:11px;background:#f5f5f5;border-radius:3px;padding:1px 6px;margin-right:3px">${i.color} ${i.shape} ${fmtKg(i.kg)}</span>`).join('');
+      const total=o.items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFloat(i.price||0)),0);
+      return `<div style="padding:8px 0;border-bottom:1px solid #f5f5f5;display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:4px">${invLabel(o.invNum)} · <span style="color:#888;font-weight:400">${o.date}</span></div>
+          <div>${itemsStr}</div>
+          ${total>0?`<div style="font-size:11px;color:#888;margin-top:3px">${fmt(total)}</div>`:''}
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="btn btn-sm" onclick="loadOrderIntoForm(${o.id})">✏ Edit</button>
+          <button class="btn btn-sm" onclick="printOrderPOS(${o.id})" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🧾</button>
+          <button class="btn btn-sm btn-danger" onclick="delOrder(${o.id})">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    const totalKg=partyOrders.reduce((s,o)=>s+o.items.reduce((ss,i)=>ss+parseFloat(i.kg||0),0),0);
+    return `<div class="party-pending-card" style="margin-bottom:10px">
+      <div class="party-pending-header">
+        <div class="party-pending-name">${party}</div>
+        <div class="party-pending-meta">${partyOrders.length} order(s) · ${fmtKg(totalKg)} total</div>
+      </div>
+      ${orderRows}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// CATALOG
+// ============================================================
+function renderCatalog(){
+  document.getElementById('color-tags').innerHTML=colors.length
+    ?colors.map(c=>`<span class="tag">${c}<button class="tag-del" onclick="delColor('${c}')">✕</button></span>`).join('')
+    :'<span style="font-size:13px;color:#bbb">No colors yet</span>';
+  document.getElementById('shape-tags').innerHTML=shapes.length
+    ?shapes.map(s=>`<span class="tag">${s}<button class="tag-del" onclick="delShape('${s}')">✕</button></span>`).join('')
+    :'<span style="font-size:13px;color:#bbb">No shapes yet</span>';
+}
+function addColor(){const inp=document.getElementById('new-color');const v=normalizeStr(inp.value);if(!v||ciIncludes(colors,v))return;colors.push(v);inp.value='';saveAll();renderCatalog();}
+function delColor(c){colors=colors.filter(x=>x!==c);saveAll();renderCatalog();}
+function addShape(){const inp=document.getElementById('new-shape');const v=normalizeStr(inp.value);if(!v||ciIncludes(shapes,v))return;shapes.push(v);inp.value='';saveAll();renderCatalog();}
+function delShape(s){shapes=shapes.filter(x=>x!==s);saveAll();renderCatalog();}
+document.getElementById('new-color').addEventListener('keydown',e=>{if(e.key==='Enter')addColor();});
+document.getElementById('new-shape').addEventListener('keydown',e=>{if(e.key==='Enter')addShape();});
+
+// ============================================================
+// PARTIES
+// ============================================================
+function renderParties(){
+  const container=document.getElementById('party-tags');
+  document.getElementById('empty-parties').style.display=parties.length?'none':'block';
+  container.innerHTML='';
+  parties.forEach(p=>{
+    const row=document.createElement('div');
+    row.className='party-row-item';
+    row.innerHTML=`<span style="font-size:13px;font-weight:600">${p.name}</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openPartyDetail(${p.id})">View</button>
+        <button class="btn btn-sm" onclick="editPartyInline(${p.id})">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delParty(${p.id})">Delete</button>
+      </div>`;
+    container.appendChild(row);
+  });
+}
+function addParty(){
+  const inp=document.getElementById('new-party');
+  const name=normalizeStr(inp.value);
+  if(!name)return;
+  if(parties.some(p=>p.name.toLowerCase()===name.toLowerCase())){alert('Party already exists.');return;}
+  parties.push({id:nextPaId++,name});
+  inp.value='';
+  saveAll();renderParties();
+}
+function editPartyInline(id){
+  const p=parties.find(x=>x.id===id);if(!p)return;
+  const newName=prompt('Edit party name:',p.name);
+  if(!newName||!newName.trim())return;
+  const name=normalizeStr(newName);
+  if(parties.some(x=>x.id!==id&&x.name.toLowerCase()===name.toLowerCase())){alert('Party already exists.');return;}
+  const old=p.name;
+  p.name=name;
+  orders.forEach(o=>{if(o.party===old)o.party=name;});
+  invoices.forEach(inv=>{if(inv.party===old)inv.party=name;});
+  saveAll();renderParties();renderOrders();renderInvoiceList();
+}
+function delParty(id){
+  if(!confirm('Delete this party?'))return;
+  parties=parties.filter(x=>x.id!==id);
+  saveAll();renderParties();
+}
+document.getElementById('new-party').addEventListener('keydown',e=>{if(e.key==='Enter')addParty();});
+
+// ============================================================
+// ORDERS
+// ============================================================
+function colorOptions(sel){return colors.map(c=>`<option value="${c}" ${c===sel?'selected':''}>${c}</option>`).join('')||'<option>Add colors first</option>';}
+function shapeOptions(sel){return shapes.map(s=>`<option value="${s}" ${s===sel?'selected':''}>${s}</option>`).join('')||'<option>Add shapes first</option>';}
+
+function addItemRow(item=null){
+  const c=document.getElementById('items-container');
+  const d=document.createElement('div');d.className='item-row';
+  const selC=item?item.color:(colors[0]||'');
+  const selS=item?item.shape:(shapes[0]||'');
+  d.innerHTML=`<select>${colorOptions(selC)}</select><select>${shapeOptions(selS)}</select>
+    <input type="number" min="0" step="0.01" value="${item?item.kg:1}" placeholder="kg">
+    <button class="item-del" onclick="this.parentElement.remove()">✕</button>`;
+  c.appendChild(d);
+}
+function getItems(){
+  return [...document.querySelectorAll('#items-container .item-row')].map(r=>{
+    const sels=r.querySelectorAll('select');const ins=r.querySelectorAll('input');
+    return{color:sels[0].value,shape:sels[1].value,kg:parseFloat(ins[0].value)||0,price:0};
+  }).filter(i=>i.color&&i.shape);
+}
+function resetOrderForm(){
+  editOid=null;
+  document.getElementById('order-form-title').textContent='New Order';
+  document.getElementById('f-party').value='';
+  document.getElementById('f-date').value=today();
+  document.getElementById('items-container').innerHTML='';
+  document.getElementById('party-dl').innerHTML=parties.map(p=>`<option value="${p.name}">`).join('');
+  document.getElementById('form-status-note').textContent='Status: Pending (auto)';
+  document.getElementById('save-order-btn').textContent='Save order';
+  addItemRow();
+}
+function cancelOrderForm(){resetOrderForm();}
+function loadOrderIntoForm(id){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  editOid=id;
+  document.getElementById('order-form-title').textContent='Edit Order — '+invLabel(o.invNum);
+  document.getElementById('f-party').value=o.party;
+  document.getElementById('f-date').value=o.date;
+  document.getElementById('items-container').innerHTML='';
+  document.getElementById('party-dl').innerHTML=parties.map(p=>`<option value="${p.name}">`).join('');
+  o.items.forEach(i=>addItemRow(i));
+  document.getElementById('form-status-note').textContent='Status: '+o.status;
+  document.getElementById('save-order-btn').textContent='Update order';
+  document.getElementById('order-form-title').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function saveOrder(){
+  const party=document.getElementById('f-party').value.trim();
+  const items=getItems();
+  if(!party||!items.length)return;
+  const dateVal=document.getElementById('f-date').value;
+  if(editOid){
+    const i=orders.findIndex(x=>x.id===editOid);
+    orders[i]={...orders[i],party,date:dateVal,items};
+  } else {
+    orders.push({id:nextOid++,invNum:nextInvNum++,party,date:dateVal,status:'Pending',items});
+  }
+  resetOrderForm();
+  saveAll();renderOrders();renderInvoiceList();
+}
+function markDone(id){const o=orders.find(x=>x.id===id);if(o){o.status='Delivered';saveAll();renderOrders();renderProduction();}}
+function delOrder(id){
+  if(!confirm('Delete this order?'))return;
+  orders=orders.filter(x=>x.id!==id);
+  saveAll();renderOrders();renderInvoiceList();
+}
+
+// ============================================================
+// INVOICES
+// ============================================================
+function addInvItemRow(item=null){
+  const c=document.getElementById('inv-items-container');
+  const d=document.createElement('div');d.className='item-row';
+  const selC=item?item.color:(colors[0]||'');
+  const selS=item?item.shape:(shapes[0]||'');
+  d.innerHTML=`<select onchange="updateInvFormTotal()">${colorOptions(selC)}</select>
+    <select onchange="updateInvFormTotal()">${shapeOptions(selS)}</select>
+    <input type="number" min="0" step="0.01" value="${item?item.kg:1}" oninput="updateInvFormTotal()">
+    <input type="number" min="0" value="${item?item.price:0}" oninput="updateInvFormTotal()">
+    <button class="item-del" onclick="this.parentElement.remove();updateInvFormTotal()">✕</button>`;
+  c.appendChild(d);updateInvFormTotal();
+}
+function getInvItems(){
+  return [...document.querySelectorAll('#inv-items-container .item-row')].map(r=>{
+    const sels=r.querySelectorAll('select');const ins=r.querySelectorAll('input');
+    return{color:sels[0].value,shape:sels[1].value,kg:parseFloat(ins[0].value)||0,price:parseFloat(ins[1].value)||0};
+  }).filter(i=>i.color&&i.shape);
+}
+function updateInvFormTotal(){
+  const t=getInvItems().reduce((s,i)=>s+(i.kg*i.price),0);
+  document.getElementById('inv-form-total').textContent=fmt(t);
+}
+function resetInvForm(){
+  editInvId=null;
+  document.getElementById('inv-form-title').textContent='New Invoice';
+  document.getElementById('save-inv-btn').textContent='Save invoice';
+  const sel=document.getElementById('if-party');
+  sel.innerHTML=parties.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  sel.disabled=false;
+  document.getElementById('if-date').value=today();
+  document.getElementById('inv-items-container').innerHTML='';
+  addInvItemRow();
+}
+function cancelInvForm(){resetInvForm();}
+function loadInvIntoForm(invId){
+  const inv=invoices.find(x=>x.id===invId);if(!inv)return;
+  editInvId=invId;
+  document.getElementById('inv-form-title').textContent='Edit Invoice — '+invNumLabel(inv.serial);
+  document.getElementById('save-inv-btn').textContent='Update invoice';
+  const sel=document.getElementById('if-party');
+  sel.innerHTML=`<option value="${inv.party}">${inv.party}</option>`;
+  sel.disabled=true;
+  document.getElementById('if-date').value=inv.date;
+  document.getElementById('inv-items-container').innerHTML='';
+  (inv.items||[]).forEach(i=>addInvItemRow(i));
+  if(!(inv.items||[]).length)addInvItemRow();
+  updateInvFormTotal();
+  document.getElementById('inv-form-title').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function saveInvoice(){
+  const party=document.getElementById('if-party').value;
+  const date=document.getElementById('if-date').value;
+  const items=getInvItems();
+  if(!party||!items.length){alert('Select a party and add at least one item.');return;}
+  if(editInvId){
+    const inv=invoices.find(x=>x.id===editInvId);
+    if(inv){inv.date=date;inv.items=items;}
+  } else {
+    invoices.push({id:Date.now(),serial:nextInvoiceNum++,party,date,items,orderIds:[]});
+  }
+  resetInvForm();
+  saveAll();renderInvoiceList();
+}
+function delInvoice(invId){
+  if(!confirm('Delete this invoice?'))return;
+  invoices=invoices.filter(x=>x.id!==invId);
+  saveAll();renderInvoiceList();
+}
+function renderInvoiceList(){
+  const tbody=document.getElementById('inv-body');
+  const empty=document.getElementById('empty-invlist');
+  if(!invoices.length){tbody.innerHTML='';empty.style.display='block';
+    document.getElementById('si-total').textContent=0;
+    document.getElementById('si-amount').textContent='₹0';return;}
+  empty.style.display='none';
+  const sorted=[...invoices].sort((a,b)=>a.serial-b.serial);
+  let grand=0;
+  tbody.innerHTML=sorted.map((inv,idx)=>{
+    const amt=(inv.items||[]).reduce((s,i)=>s+(i.kg*i.price),0);
+    grand+=amt;
+    return `<tr>
+      <td style="color:#bbb;font-size:12px">${idx+1}</td>
+      <td style="color:#888;font-size:12px">${invNumLabel(inv.serial)}</td>
+      <td style="font-weight:600">${inv.party}</td>
+      <td style="color:#888">${inv.date}</td>
+      <td>${fmt(amt)}</td>
+      <td><div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="loadInvIntoForm(${inv.id})">Edit</button>
+        <button class="btn btn-sm btn-primary" onclick="viewInvoice(${inv.id})">Print</button>
+        <button class="btn btn-sm btn-danger" onclick="delInvoice(${inv.id})">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('si-total').textContent=invoices.length;
+  document.getElementById('si-amount').textContent=fmt(grand);
+  const sel=document.getElementById('if-party');
+  if(sel&&!editInvId) sel.innerHTML=parties.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+}
+
+// ============================================================
+// PRINT INVOICE
+// ============================================================
+let invReturnTab='invoices';
+function viewInvoice(invId){
+  currentPosInvId=invId;
+  const inv=invoices.find(x=>x.id===invId);if(!inv)return;
+  const items=inv.items||[];
+  const rows=items.map(i=>`<tr>
+    <td>${i.color}</td><td>${i.shape}</td>
+    <td style="text-align:center">${fmtKg(i.kg)}</td>
+    <td style="text-align:right">${fmt(i.price)}/kg</td>
+    <td style="text-align:right">${fmt(i.kg*i.price)}</td>
+  </tr>`).join('');
+  const grand=items.reduce((s,i)=>s+(i.kg*i.price),0);
+  document.getElementById('inv-content').innerHTML=`
+    <div style="margin-bottom:18px">
+      <div class="inv-to-name" style="font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:4px">${inv.party}</div>
+      <div class="inv-meta" style="text-align:left;font-size:13px;color:#888;line-height:1.8">
+        <span><strong>Invoice#</strong> ${invNumLabel(inv.serial)}</span> &nbsp;·&nbsp;
+        <span>Date: ${inv.date}</span>
+      </div>
+    </div>
+    <table class="inv-table">
+      <thead><tr><th style="width:22%">Color</th><th style="width:22%">Shape</th>
+        <th style="width:18%;text-align:center">Qty (kg)</th>
+        <th style="width:20%;text-align:right">Rate</th>
+        <th style="width:18%;text-align:right">Amount</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="inv-total-box"><div class="inv-total-inner">
+      <div class="inv-total-row grand"><span>Total</span><span>${fmt(grand)}</span></div>
+    </div></div>`;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  ['orders','invoices','catalog','production'].forEach(id=>document.getElementById('tab-'+id).classList.remove('active'));
+  document.getElementById('view-invoice').style.display='block';
+}
+function closeInvoice(){
+  document.getElementById('view-invoice').style.display='none';
+  document.getElementById('pos-inv-wrap').style.display='none';
+  document.getElementById('inv-content').closest('.inv-wrap').style.display='';
+  document.body.classList.remove('pos-mode');
+  currentPosInvId=null;
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===1));
+  ['orders','invoices','catalog','production'].forEach((id,i)=>document.getElementById('tab-'+id).classList.toggle('active',i===1));
+  renderInvoiceList();
+}
+
+// ============================================================
+// PARTY DETAIL & LEDGER
+// ============================================================
+function openPartyDetail(id){
+  const p=parties.find(x=>x.id===id);if(!p)return;
+  pdPartyId=id;
+  document.getElementById('pd-title').textContent=p.name;
+  const pOrders=orders.filter(o=>o.party===p.name);
+  const pInvoices=invoices.filter(inv=>inv.party===p.name);
+  const totalOrdered=pOrders.reduce((s,o)=>s+totalAmt(o),0);
+  const totalInvoiced=pInvoices.reduce((s,inv)=>s+(inv.items||[]).reduce((ss,i)=>ss+(i.kg*i.price),0),0);
+  let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+    <div class="stat"><div class="stat-label">Orders</div><div class="stat-val" style="font-size:16px">${pOrders.length}</div></div>
+    <div class="stat"><div class="stat-label">Ordered</div><div class="stat-val" style="font-size:13px">${fmt(totalOrdered)}</div></div>
+    <div class="stat"><div class="stat-label">Invoiced</div><div class="stat-val" style="font-size:13px;color:#16a34a">${fmt(totalInvoiced)}</div></div>
+  </div>`;
+  if(pOrders.length){
+    html+=`<div style="font-size:11px;font-weight:600;color:#999;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Orders</div>`;
+    html+=pOrders.map(o=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <div style="font-size:13px">${o.date} &nbsp;<span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></div>
+        <div style="font-size:12px;color:#999">${o.items.map(i=>i.color+' '+i.shape+' '+fmtKg(i.kg)).join(' · ')}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:13px;font-weight:600">${fmt(totalAmt(o))}</span>
+        <button class="btn btn-sm" onclick="closeModal('modal-party-detail');openOrderView(${o.id})">View</button>
+        <button class="btn btn-sm" onclick="closeModal('modal-party-detail');editOrderFromAnywhere(${o.id})">Edit</button>
+      </div>
+    </div>`).join('');
+  }
+  if(pInvoices.length){
+    html+=`<div style="font-size:11px;font-weight:600;color:#999;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em">Invoices</div>`;
+    html+=pInvoices.map(inv=>{
+      const amt=(inv.items||[]).reduce((s,i)=>s+(i.kg*i.price),0);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0">
+        <div>
+          <div style="font-size:13px">${invNumLabel(inv.serial)} &nbsp;<span style="font-size:12px;color:#999">${inv.date}</span></div>
+          <div style="font-size:12px;color:#999">${(inv.items||[]).map(i=>i.color+' '+i.shape+' '+fmtKg(i.kg)).join(' · ')}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px;font-weight:600">${fmt(amt)}</span>
+          <button class="btn btn-sm" onclick="closeModal('modal-party-detail');viewInvoice(${inv.id})">Print</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if(!pOrders.length&&!pInvoices.length) html+='<div class="empty">No orders or invoices yet.</div>';
+  document.getElementById('pd-body').innerHTML=html;
+  document.getElementById('modal-party-detail').classList.add('open');
+}
+function printPartyLedger(){
+  const p=parties.find(x=>x.id===pdPartyId);if(!p)return;
+  const pOrders=orders.filter(o=>o.party===p.name);
+  const pInvoices=invoices.filter(inv=>inv.party===p.name);
+  const totalOrdered=pOrders.reduce((s,o)=>s+totalAmt(o),0);
+  const totalInvoiced=pInvoices.reduce((s,inv)=>s+(inv.items||[]).reduce((ss,i)=>ss+(i.kg*i.price),0),0);
+  const orderRows=pOrders.map(o=>`<tr>
+    <td>${o.date}</td><td>${o.items.map(i=>i.color+' '+i.shape).join(', ')}</td>
+    <td style="text-align:right">${o.items.map(i=>fmtKg(i.kg)).join(', ')}</td>
+    <td style="text-align:right">${fmt(totalAmt(o))}</td><td>${o.status}</td>
+  </tr>`).join('');
+  const invRows=pInvoices.map(inv=>{
+    const amt=(inv.items||[]).reduce((s,i)=>s+(i.kg*i.price),0);
+    return `<tr><td>${inv.date}</td><td>${invNumLabel(inv.serial)}</td>
+      <td>${(inv.items||[]).map(i=>i.color+' '+i.shape).join(', ')}</td>
+      <td style="text-align:right">${(inv.items||[]).map(i=>fmtKg(i.kg)).join(', ')}</td>
+      <td style="text-align:right">${fmt(amt)}</td></tr>`;
+  }).join('');
+  document.getElementById('ledger-content').innerHTML=`
+    <div class="inv-header">
+      <div><div class="inv-factory">Sitara</div><div class="inv-sub">Sequins Manufacturer</div><div class="inv-addr">Delhi, India</div></div>
+      <div class="inv-meta"><div><strong>Party Ledger</strong></div><div>${p.name}</div><div>Printed: ${today()}</div></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">Orders</div>
+    <table class="inv-table">
+      <thead><tr><th>Date</th><th>Items</th><th style="text-align:right">Qty</th><th style="text-align:right">Amount</th><th>Status</th></tr></thead>
+      <tbody>${orderRows||'<tr><td colspan="5" style="color:#bbb;text-align:center;padding:8px">No orders</td></tr>'}</tbody>
+    </table>
+    <div style="font-size:13px;font-weight:600;margin:14px 0 8px">Invoices</div>
+    <table class="inv-table">
+      <thead><tr><th>Date</th><th>Inv#</th><th>Items</th><th style="text-align:right">Qty</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody>${invRows||'<tr><td colspan="5" style="color:#bbb;text-align:center;padding:8px">No invoices</td></tr>'}</tbody>
+    </table>
+    <div class="inv-total-box" style="margin-top:14px"><div class="inv-total-inner">
+      <div class="inv-total-row"><span>Total Ordered</span><span>${fmt(totalOrdered)}</span></div>
+      <div class="inv-total-row grand"><span>Total Invoiced</span><span>${fmt(totalInvoiced)}</span></div>
+    </div></div>
+    <div class="inv-footer">Sitara Sequins, Delhi</div>`;
+  closeModal('modal-party-detail');
+  document.getElementById('view-ledger').style.display='block';
+  document.getElementById('view-invoice').style.display='none';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  ['orders','invoices','catalog','production'].forEach(id=>document.getElementById('tab-'+id).classList.remove('active'));
+}
+function closeLedger(){
+  document.getElementById('view-ledger').style.display='none';
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===2));
+  ['orders','invoices','catalog','production'].forEach((id,i)=>document.getElementById('tab-'+id).classList.toggle('active',i===2));
+}
+
+// ============================================================
+// ORDER VIEW MODAL
+// ============================================================
+function openOrderView(id){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  ovOid=id;
+  document.getElementById('ov-title').textContent=`Order — ${o.party}`;
+  const rows=o.items.map(i=>`<tr>
+    <td>${i.color}</td><td>${i.shape}</td>
+    <td style="text-align:right">${fmtKg(i.kg)}</td>
+    <td style="text-align:right">${fmt(i.price)}/kg</td>
+    <td style="text-align:right;font-weight:600">${fmt(i.kg*i.price)}</td>
+  </tr>`).join('');
+  document.getElementById('ov-body').innerHTML=`
+    <div class="detail-row"><span class="detail-label">Party</span><span class="detail-val">${o.party}</span></div>
+    <div class="detail-row"><span class="detail-label">Date</span><span class="detail-val">${o.date}</span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-val"><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></span></div>
+    <div class="detail-row"><span class="detail-label">Total</span><span class="detail-val">${fmt(totalAmt(o))}</span></div>
+    <table class="detail-items-table">
+      <thead><tr><th>Color</th><th>Shape</th><th style="text-align:right">Kg</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  document.getElementById('modal-order-view').classList.add('open');
+}
+function editFromOrderView(){closeModal('modal-order-view');editOrderFromAnywhere(ovOid);}
+function editOrderFromAnywhere(id){
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  ['orders','invoices','catalog','production'].forEach((id2,i)=>document.getElementById('tab-'+id2).classList.toggle('active',i===0));
+  document.getElementById('view-invoice').style.display='none';
+  loadOrderIntoForm(id);
+}
+
+// ============================================================
+// PENDING WORK
+// ============================================================
+let prodView='item'; // 'item' or 'party'
+
+function setToday(){ renderProduction(); } // kept for renderAll compatibility
+
+function setProdView(v){
+  prodView=v;
+  document.getElementById('pw-btn-item').style.background  = v==='item'  ? '#2563eb' : '#fff';
+  document.getElementById('pw-btn-item').style.color       = v==='item'  ? '#fff'    : '#888';
+  document.getElementById('pw-btn-party').style.background = v==='party' ? '#2563eb' : '#fff';
+  document.getElementById('pw-btn-party').style.color      = v==='party' ? '#fff'    : '#888';
+  renderProduction();
+}
+
+function setProdSort(s, el){
+  prodSort=s;
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderProduction();
+}
+
+function sortNetCards(cards){
+  const c=[...cards];
+  switch(prodSort){
+    case 'qty-desc': return c.sort((a,b)=>b.net-a.net);
+    case 'qty-asc':  return c.sort((a,b)=>a.net-b.net);
+    default: return c;
+  }
+}
+
+function renderProduction(){
+  const search=(document.getElementById('prod-search')||{value:''}).value.trim().toLowerCase();
+
+  // ── Build net-pending across ALL pending orders (all dates) ──
+  // ordered[color||shape] = {totalKg, parties:{name->kg}, dates:[]}
+  const ordByItem={};
+  orders.filter(o=>o.status==='Pending').forEach(o=>{
+    o.items.forEach(i=>{
+      const key=i.color+'||'+i.shape;
+      if(!ordByItem[key])ordByItem[key]={totalKg:0,parties:{},dates:[]};
+      ordByItem[key].totalKg+=parseFloat(i.kg||0);
+      ordByItem[key].parties[o.party]=(ordByItem[key].parties[o.party]||0)+parseFloat(i.kg||0);
+      if(!ordByItem[key].dates.includes(o.date)) ordByItem[key].dates.push(o.date);
+    });
+  });
+
+  // invoiced[color||shape] = totalKg invoiced (ALL invoices, ALL dates)
+  const invByItem={};
+  invoices.forEach(inv=>{
+    (inv.items||[]).forEach(i=>{
+      const key=i.color+'||'+i.shape;
+      invByItem[key]=(invByItem[key]||0)+parseFloat(i.kg||0);
+    });
+  });
+
+  // Also build per-party invoice map for party-wise view
+  const invByPartyItem={};
+  invoices.forEach(inv=>{
+    if(!invByPartyItem[inv.party])invByPartyItem[inv.party]={};
+    (inv.items||[]).forEach(i=>{
+      const key=i.color+'||'+i.shape;
+      invByPartyItem[inv.party][key]=(invByPartyItem[inv.party][key]||0)+parseFloat(i.kg||0);
+    });
+  });
+
+  // ── Build raw item cards ──────────────────────────────────────
+  const rawCards=[];
+  let totalOrderKg=0, totalInvKg=0, totalNetKg=0;
+  Object.entries(ordByItem).forEach(([key,v])=>{
+    const invKg=invByItem[key]||0;
+    const net=v.totalKg-invKg;
+    totalOrderKg+=v.totalKg; totalInvKg+=invKg;
+    if(net>0.001){
+      totalNetKg+=net;
+      const [color,shape]=key.split('||');
+      rawCards.push({color,shape,ordKg:v.totalKg,invKg,net,parties:v.parties,dates:v.dates});
+    }
+  });
+  // add invoiced-only items to total
+  Object.entries(invByItem).forEach(([key,invKg])=>{if(!ordByItem[key])totalInvKg+=invKg;});
+
+  const summary=document.getElementById('prod-summary');
+  const emptyEl=document.getElementById('empty-prod');
+
+  // Stats bar (always shown)
+  const statsBar=`<div style="display:flex;gap:8px;margin-bottom:14px">
+    <div class="stat"><div class="stat-label">Net Due (kg)</div><div class="stat-val" style="font-size:18px;color:#d97706">${totalNetKg.toFixed(2)}</div></div>
+    <div class="stat"><div class="stat-label">Items Pending</div><div class="stat-val" style="font-size:18px">${rawCards.length}</div></div>
+  </div>`;
+
+  if(!rawCards.length && !orders.filter(o=>o.status==='Pending').length){
+    emptyEl.style.display='block';
+    summary.innerHTML=statsBar;
+    return;
+  }
+  emptyEl.style.display='none';
+
+  if(prodView==='item'){
+    // ── ITEM-WISE VIEW ──────────────────────────────────────────
+    let cards=sortNetCards(rawCards);
+    if(search) cards=cards.filter(c=>
+      c.color.toLowerCase().includes(search)||
+      c.shape.toLowerCase().includes(search)||
+      Object.keys(c.parties).some(p=>p.toLowerCase().includes(search))
+    );
+    if(!cards.length){
+      summary.innerHTML=statsBar+'<div style="text-align:center;color:#bbb;font-size:13px;padding:20px 0">No items match your search.</div>';
+      return;
+    }
+    summary.innerHTML=statsBar+
+      `<div style="font-size:11px;color:#888;margin-bottom:10px">${cards.length} item(s) · Net due = Ordered − Invoiced</div>`+
+      cards.map(c=>{
+        const partyBreakdown=Object.entries(c.parties)
+          .map(([p,kg])=>`<span style="background:#f0f4ff;border-radius:4px;padding:1px 7px;font-size:11px;color:#2563eb;margin-right:4px">${p}: ${fmtKg(kg)}</span>`)
+          .join('');
+        const datesStr=c.dates.sort().map(d=>`<span style="font-size:10px;color:#bbb;background:#f5f5f5;border-radius:3px;padding:1px 5px;margin-right:3px">${d}</span>`).join('');
+        return `<div class="prod-card">
+          <div style="flex:1">
+            <div class="prod-item-label" style="margin-bottom:5px">🎨 ${c.color} &nbsp;<span style="color:#aaa">◆</span>&nbsp; ${c.shape}</div>
+            <div style="margin-bottom:3px">${partyBreakdown}</div>
+            <div>${datesStr}</div>
+            ${c.invKg>0?`<div style="font-size:11px;color:#16a34a;margin-top:3px">Invoiced: ${fmtKg(c.invKg)}</div>`:''}
+          </div>
+          <div style="text-align:right;min-width:72px">
+            <div class="prod-kg" style="color:#d97706">${fmtKg(c.net)}</div>
+            <div style="font-size:11px;color:#aaa">net due</div>
+          </div>
+        </div>`;
+      }).join('');
+
+  } else {
+    // ── PARTY-WISE VIEW ─────────────────────────────────────────
+    // Build per-party net pending
+    const partyMap={};
+    orders.filter(o=>o.status==='Pending').forEach(o=>{
+      if(!partyMap[o.party])partyMap[o.party]={items:{},dates:[]};
+      o.items.forEach(i=>{
+        const key=i.color+'||'+i.shape;
+        if(!partyMap[o.party].items[key])partyMap[o.party].items[key]={ordKg:0,invKg:0,color:i.color,shape:i.shape};
+        partyMap[o.party].items[key].ordKg+=parseFloat(i.kg||0);
+      });
+      if(!partyMap[o.party].dates.includes(o.date))partyMap[o.party].dates.push(o.date);
+    });
+    // subtract invoiced per party
+    Object.keys(partyMap).forEach(party=>{
+      const pi=invByPartyItem[party]||{};
+      Object.keys(partyMap[party].items).forEach(key=>{
+        partyMap[party].items[key].invKg=pi[key]||0;
+      });
+    });
+
+    let partyNames=Object.keys(partyMap);
+    if(search) partyNames=partyNames.filter(p=>
+      p.toLowerCase().includes(search)||
+      Object.values(partyMap[p].items).some(it=>
+        it.color.toLowerCase().includes(search)||it.shape.toLowerCase().includes(search)
+      )
+    );
+    if(!partyNames.length){
+      summary.innerHTML=statsBar+'<div style="text-align:center;color:#bbb;font-size:13px;padding:20px 0">No parties match your search.</div>';
+      return;
+    }
+
+    // Sort parties by total net pending
+    partyNames.sort((a,b)=>{
+      const netA=Object.values(partyMap[a].items).reduce((s,i)=>s+Math.max(0,i.ordKg-i.invKg),0);
+      const netB=Object.values(partyMap[b].items).reduce((s,i)=>s+Math.max(0,i.ordKg-i.invKg),0);
+      return prodSort==='qty-asc'?netA-netB:netB-netA;
+    });
+
+    const partyCards=partyNames.map(party=>{
+      const data=partyMap[party];
+      const itemEntries=Object.values(data.items);
+      let rows=itemEntries.map(it=>{
+        const net=it.ordKg-it.invKg;
+        if(net<=0.001)return '';
+        return `<tr>
+          <td style="padding:6px 8px;font-size:12px;font-weight:600">${it.color}</td>
+          <td style="padding:6px 8px;font-size:12px;color:#888">${it.shape}</td>
+          <td style="padding:6px 8px;font-size:12px;text-align:right;color:#888">${fmtKg(it.ordKg)}</td>
+          <td style="padding:6px 8px;font-size:12px;text-align:right;color:#16a34a">${it.invKg>0?fmtKg(it.invKg):'-'}</td>
+          <td style="padding:6px 8px;font-size:13px;font-weight:700;text-align:right;color:#d97706">${fmtKg(net)}</td>
+        </tr>`;
+      }).filter(Boolean).join('');
+      if(!rows)return '';
+      const totalNet=itemEntries.reduce((s,i)=>s+Math.max(0,i.ordKg-i.invKg),0);
+      const datesStr=data.dates.sort().join(', ');
+      return `<div class="party-pending-card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div style="font-size:14px;font-weight:700">${party}</div>
+            <div style="font-size:11px;color:#aaa">Orders dated: ${datesStr}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:20px;font-weight:700;color:#d97706">${fmtKg(totalNet)}</div>
+            <div style="font-size:11px;color:#aaa">net due</div>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="border-bottom:1.5px solid #f0f0f0">
+            <th style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;padding:3px 8px;text-align:left">Color</th>
+            <th style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;padding:3px 8px;text-align:left">Shape</th>
+            <th style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;padding:3px 8px;text-align:right">Ordered</th>
+            <th style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;padding:3px 8px;text-align:right">Invoiced</th>
+            <th style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;padding:3px 8px;text-align:right">Net Due</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }).filter(Boolean).join('');
+
+    summary.innerHTML=statsBar+
+      `<div style="font-size:11px;color:#888;margin-bottom:10px">${partyNames.length} part${partyNames.length===1?'y':'ies'} · Net due = Ordered − Invoiced</div>`+
+      partyCards;
+  }
+}
+
+// ============================================================
+// PENDING WORK — EXPORT XLS
+// ============================================================
+function exportPendingXLS(){
+  if(typeof XLSX==='undefined'){alert('XLSX library not loaded.');return;}
+  const wb=XLSX.utils.book_new();
+
+  // ── Item-wise sheet ──
+  const itemRows=[['Color','Shape','Ordered (kg)','Invoiced (kg)','Net Due (kg)','Parties','Dates']];
+  const ordByItem={};
+  orders.filter(o=>o.status==='Pending').forEach(o=>{
+    o.items.forEach(i=>{
+      const k=i.color+'||'+i.shape;
+      if(!ordByItem[k])ordByItem[k]={color:i.color,shape:i.shape,totalKg:0,parties:{},dates:[]};
+      ordByItem[k].totalKg+=parseFloat(i.kg||0);
+      ordByItem[k].parties[o.party]=(ordByItem[k].parties[o.party]||0)+parseFloat(i.kg||0);
+      if(!ordByItem[k].dates.includes(o.date))ordByItem[k].dates.push(o.date);
+    });
+  });
+  const invByItem={};
+  invoices.forEach(inv=>(inv.items||[]).forEach(i=>{
+    const k=i.color+'||'+i.shape;
+    invByItem[k]=(invByItem[k]||0)+parseFloat(i.kg||0);
+  }));
+  Object.values(ordByItem).forEach(v=>{
+    const invKg=invByItem[v.color+'||'+v.shape]||0;
+    const net=v.totalKg-invKg;
+    if(net>0.001) itemRows.push([v.color,v.shape,v.totalKg,invKg,net,
+      Object.entries(v.parties).map(([p,kg])=>p+':'+kg+'kg').join(', '),
+      v.dates.sort().join(', ')]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(itemRows),'Item-wise');
+
+  // ── Party-wise sheet ──
+  const partyRows=[['Party','Color','Shape','Ordered (kg)','Invoiced (kg)','Net Due (kg)','Order Dates']];
+  const invByPartyItem={};
+  invoices.forEach(inv=>{
+    if(!invByPartyItem[inv.party])invByPartyItem[inv.party]={};
+    (inv.items||[]).forEach(i=>{
+      const k=i.color+'||'+i.shape;
+      invByPartyItem[inv.party][k]=(invByPartyItem[inv.party][k]||0)+parseFloat(i.kg||0);
+    });
+  });
+  const partyMap={};
+  orders.filter(o=>o.status==='Pending').forEach(o=>{
+    if(!partyMap[o.party])partyMap[o.party]={items:{},dates:[]};
+    o.items.forEach(i=>{
+      const k=i.color+'||'+i.shape;
+      if(!partyMap[o.party].items[k])partyMap[o.party].items[k]={color:i.color,shape:i.shape,ordKg:0};
+      partyMap[o.party].items[k].ordKg+=parseFloat(i.kg||0);
+    });
+    if(!partyMap[o.party].dates.includes(o.date))partyMap[o.party].dates.push(o.date);
+  });
+  Object.entries(partyMap).forEach(([party,data])=>{
+    Object.values(data.items).forEach(it=>{
+      const invKg=(invByPartyItem[party]&&invByPartyItem[party][it.color+'||'+it.shape])||0;
+      const net=it.ordKg-invKg;
+      if(net>0.001) partyRows.push([party,it.color,it.shape,it.ordKg,invKg,net,data.dates.sort().join(', ')]);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(partyRows),'Party-wise');
+
+  XLSX.writeFile(wb,'Pending_Work_'+today()+'.xlsx');
+}
+
+// ============================================================
+// PENDING WORK — POS PRINT
+// ============================================================
+function printPendingPOS(mode){
+  mode=mode||'item';
+
+  // Build invoice maps
+  const invByItem={};
+  const invByPartyItem={};
+  invoices.forEach(inv=>{
+    if(!invByPartyItem[inv.party])invByPartyItem[inv.party]={};
+    (inv.items||[]).forEach(i=>{
+      const k=i.color+'||'+i.shape;
+      invByItem[k]=(invByItem[k]||0)+parseFloat(i.kg||0);
+      invByPartyItem[inv.party][k]=(invByPartyItem[inv.party][k]||0)+parseFloat(i.kg||0);
+    });
+  });
+
+  let posContent='';
+
+  if(mode==='item'){
+    // ── Item-wise POS ──────────────────────────────────────────
+    const ordByItem={};
+    orders.filter(o=>o.status==='Pending').forEach(o=>{
+      o.items.forEach(i=>{
+        const k=i.color+'||'+i.shape;
+        if(!ordByItem[k])ordByItem[k]={color:i.color,shape:i.shape,totalKg:0};
+        ordByItem[k].totalKg+=parseFloat(i.kg||0);
+      });
+    });
+    const items=Object.values(ordByItem).map(v=>{
+      const net=v.totalKg-(invByItem[v.color+'||'+v.shape]||0);
+      return net>0.001?{color:v.color,shape:v.shape,net}:null;
+    }).filter(Boolean).sort((a,b)=>b.net-a.net);
+    const totalNet=items.reduce((s,i)=>s+i.net,0);
+    const rows=items.map(i=>`<div class="pos-item-row">
+      <div class="pos-col-item">${i.color} ${i.shape}</div>
+      <div class="pos-col-kg">${i.net.toFixed(2)}</div>
+    </div>`).join('');
+    posContent=`
+      <div class="pos-title">SITARA SEQUINS</div>
+      <div class="pos-sub">Item-wise Pending</div>
+      <hr class="pos-divider">
+      <div class="pos-row"><span>Date</span><span>${today()}</span></div>
+      <div class="pos-row"><span>Items</span><span>${items.length}</span></div>
+      <hr class="pos-divider">
+      <div class="pos-items-hdr"><div style="flex:1">Item</div><div style="width:60px;text-align:right">Kg</div></div>
+      ${rows}
+      <hr class="pos-divider">
+      <div class="pos-row bold"><span>TOTAL</span><span>${totalNet.toFixed(2)} kg</span></div>
+      <hr class="pos-divider">`;
+
+  } else {
+    // ── Party-wise POS — one section per party ─────────────────
+    const partyMap={};
+    orders.filter(o=>o.status==='Pending').forEach(o=>{
+      if(!partyMap[o.party])partyMap[o.party]={};
+      o.items.forEach(i=>{
+        const k=i.color+'||'+i.shape;
+        if(!partyMap[o.party][k])partyMap[o.party][k]={color:i.color,shape:i.shape,ordKg:0};
+        partyMap[o.party][k].ordKg+=parseFloat(i.kg||0);
+      });
+    });
+    let grandTotal=0;
+    const partySections=Object.entries(partyMap).map(([party,itemMap])=>{
+      const pi=invByPartyItem[party]||{};
+      const netItems=Object.values(itemMap).map(it=>{
+        const net=it.ordKg-(pi[it.color+'||'+it.shape]||0);
+        return net>0.001?{color:it.color,shape:it.shape,net}:null;
+      }).filter(Boolean).sort((a,b)=>b.net-a.net);
+      if(!netItems.length)return '';
+      const partyTotal=netItems.reduce((s,i)=>s+i.net,0);
+      grandTotal+=partyTotal;
+      const rows=netItems.map(i=>`<div class="pos-item-row">
+        <div class="pos-col-item">${i.color} ${i.shape}</div>
+        <div class="pos-col-kg">${i.net.toFixed(2)}</div>
+      </div>`).join('');
+      return `<div class="pos-row bold" style="margin-top:6px"><span>${party}</span><span>${partyTotal.toFixed(2)} kg</span></div>
+        <hr class="pos-divider">
+        <div class="pos-items-hdr"><div style="flex:1">Item</div><div style="width:60px;text-align:right">Kg</div></div>
+        ${rows}
+        <hr class="pos-divider">`;
+    }).filter(Boolean).join('');
+
+    posContent=`
+      <div class="pos-title">SITARA SEQUINS</div>
+      <div class="pos-sub">Party-wise Pending</div>
+      <hr class="pos-divider">
+      <div class="pos-row"><span>Date</span><span>${today()}</span></div>
+      <hr class="pos-divider">
+      ${partySections}
+      <div class="pos-row bold"><span>GRAND TOTAL</span><span>${grandTotal.toFixed(2)} kg</span></div>
+      <hr class="pos-divider">`;
+  }
+
+  document.getElementById('pos-inv-content').innerHTML=posContent;
+  document.getElementById('pos-inv-wrap').style.display='block';
+  document.getElementById('inv-content').closest('.inv-wrap').style.display='none';
+  document.getElementById('view-invoice').style.display='block';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  ['orders','invoices','catalog','production'].forEach(id=>document.getElementById('tab-'+id).classList.remove('active'));
+  document.querySelector('.inv-actions').style.display='none';
+  document.body.classList.add('pos-mode');
+  window.print();
+  setTimeout(()=>{
+    document.body.classList.remove('pos-mode');
+    document.getElementById('pos-inv-wrap').style.display='none';
+    document.getElementById('inv-content').closest('.inv-wrap').style.display='';
+    document.getElementById('view-invoice').style.display='none';
+    document.querySelector('.inv-actions').style.display='';
+    document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===3));
+    ['orders','invoices','catalog','production'].forEach((id,i)=>document.getElementById('tab-'+id).classList.toggle('active',i===3));
+  },600);
+}
+
+// ── Print individual order as POS receipt ──
+function printOrderPOS(id){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  const rows=o.items.map(i=>`<div class="pos-item-row">
+    <div class="pos-col-item">${i.color} ${i.shape}</div>
+    <div class="pos-col-kg">${parseFloat(i.kg).toFixed(2)}</div>
+    <div class="pos-col-rate">${i.price>0?parseFloat(i.price).toFixed(0):''}</div>
+    <div class="pos-col-amt">${i.price>0?fmt(i.kg*i.price):''}</div>
+  </div>`).join('');
+  const total=o.items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFloat(i.price||0)),0);
+  document.getElementById('pos-inv-content').innerHTML=`
+    <div class="pos-title">SITARA SEQUINS</div>
+    <div class="pos-sub">Order Receipt</div>
+    <hr class="pos-divider">
+    <div class="pos-row"><span>Order#</span><span>${invLabel(o.invNum)}</span></div>
+    <div class="pos-row"><span>Party</span><span>${o.party}</span></div>
+    <div class="pos-row"><span>Date</span><span>${o.date}</span></div>
+    <hr class="pos-divider">
+    <div class="pos-items-hdr">
+      <div style="flex:1">Item</div>
+      <div style="width:30px;text-align:right">Kg</div>
+      <div style="width:38px;text-align:right">Rate</div>
+      <div style="width:42px;text-align:right">Amt</div>
+    </div>
+    ${rows}
+    <hr class="pos-divider">
+    ${total>0?`<div class="pos-row bold"><span>TOTAL</span><span>${fmt(total)}</span></div><hr class="pos-divider">`:''}
+    <div class="pos-footer">Thank you!</div>`;
+  document.getElementById('pos-inv-wrap').style.display='block';
+  document.getElementById('inv-content').closest('.inv-wrap').style.display='none';
+  document.getElementById('view-invoice').style.display='block';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  ['orders','invoices','catalog','production'].forEach(id=>document.getElementById('tab-'+id).classList.remove('active'));
+  document.querySelector('.inv-actions').style.display='none';
+  document.body.classList.add('pos-mode');
+  window.print();
+  setTimeout(()=>{
+    document.body.classList.remove('pos-mode');
+    document.getElementById('pos-inv-wrap').style.display='none';
+    document.getElementById('inv-content').closest('.inv-wrap').style.display='';
+    document.getElementById('view-invoice').style.display='none';
+    document.querySelector('.inv-actions').style.display='';
+    document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===0));
+    ['orders','invoices','catalog','production'].forEach((id,i)=>document.getElementById('tab-'+id).classList.toggle('active',i===0));
+  },600);
+}
+
+// ============================================================
+// POS PRINT
+// ============================================================
+let currentPosInvId=null;
+function printPOS(){
+  if(!currentPosInvId)return;
+  const inv=invoices.find(x=>x.id===currentPosInvId);if(!inv)return;
+  // Build POS content
+  const items=inv.items||[];
+  const grand=items.reduce((s,i)=>s+(i.kg*i.price),0);
+  const dashes='--------------------------------';
+  const itemRows=items.map(i=>{
+    const amt=Math.round(parseFloat(i.kg||0)*parseFloat(i.price||0));
+    return `<div class="pos-item-row">
+      <div class="pos-col-item">${i.color} ${i.shape}</div>
+      <div class="pos-col-kg">${parseFloat(i.kg).toFixed(2)}</div>
+      <div class="pos-col-rate">${parseFloat(i.price||0).toFixed(0)}</div>
+      <div class="pos-col-amt">${amt>0?amt:''}</div>
+    </div>`;
+  }).join('');
+  const totalKg=items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+  document.getElementById('pos-inv-content').innerHTML=`
+    <div class="pos-title">${inv.party}</div>
+    <hr class="pos-divider">
+    <div class="pos-row"><span>${invNumLabel(inv.serial)}</span><span>${inv.date}</span></div>
+    <hr class="pos-divider">
+    ${itemRows}
+    <hr class="pos-divider">
+    <div class="pos-row bold"><span>WT</span><span>${totalKg.toFixed(2)}</span></div>
+    <div class="pos-row bold"><span>AMT</span><span>${Math.round(grand)}</span></div>
+    <hr class="pos-divider">
+  `;
+  document.getElementById('pos-inv-wrap').style.display='block';
+  document.getElementById('inv-content').closest('.inv-wrap').style.display='none';
+  document.querySelector('.inv-actions').style.display='none';
+  document.body.classList.add('pos-mode');
+  window.print();
+  // restore after print
+  setTimeout(()=>{
+    document.body.classList.remove('pos-mode');
+    document.getElementById('pos-inv-wrap').style.display='none';
+    document.getElementById('inv-content').closest('.inv-wrap').style.display='';
+    document.querySelector('.inv-actions').style.display='';
+  },500);
+}
+
+// ============================================================
+// XLS IMPORT
+// ============================================================
+function importFromXLS(input){
+  const file=input.files[0];
+  if(!file){return;}
+  // reset input so same file can be re-imported
+  input.value='';
+
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+
+      let importedOrders=0, importedInvoices=0, importedParties=0,
+          importedColors=0, importedShapes=0;
+      const log=[];
+
+      // ── ORDERS sheet ──────────────────────────────────────────
+      if(wb.SheetNames.includes('Orders')){
+        const ws=wb.Sheets['Orders'];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        const newOrders=[];
+        let oid=1;
+        const grouped={};
+        rows.forEach(r=>{
+          const orderNum=String(r['Order#']||'').trim();
+          const party=String(r['Party']||'').trim();
+          const date=String(r['Date']||'').trim();
+          const color=String(r['Color']||'').trim();
+          const shape=String(r['Shape']||'').trim();
+          const kg=parseFloat(r['Qty (kg)'])||0;
+          const price=parseFloat(r['Rate (₹/kg)'])||0;
+          const status=String(r['Status']||'Pending').trim();
+          if(!orderNum||!party||!date)return;
+          if(!grouped[orderNum])grouped[orderNum]={orderNum,party,date,status,items:[]};
+          if(color&&shape&&!(color.startsWith('('))){
+            grouped[orderNum].items.push({color,shape,kg,price});
+          }
+        });
+        Object.values(grouped).forEach(g=>{
+          // extract number from SIT-XXXX
+          const num=parseInt(g.orderNum.replace(/[^0-9]/g,''))||oid;
+          newOrders.push({
+            id:oid, invNum:num, party:g.party,
+            date:g.date, status:g.status,
+            items:g.items.length?g.items:[{color:'og100',shape:'1014',kg:1,price:0}]
+          });
+          oid++;
+        });
+        if(newOrders.length){
+          orders=newOrders;
+          nextOid=oid;
+          nextInvNum=oid;
+          importedOrders=newOrders.length;
+          log.push(`✅ Orders: ${importedOrders} imported`);
+        } else {
+          log.push('⚠️ Orders sheet found but no valid rows read');
+        }
+      } else {
+        log.push('ℹ️ No "Orders" sheet found — orders unchanged');
+      }
+
+      // ── INVOICES sheet ────────────────────────────────────────
+      if(wb.SheetNames.includes('Invoices')){
+        const ws=wb.Sheets['Invoices'];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        const newInvoices=[];
+        let serial=1;
+        const grouped={};
+        rows.forEach(r=>{
+          const invNum=String(r['Invoice#']||'').trim();
+          const party=String(r['Party']||'').trim();
+          const date=String(r['Date']||'').trim();
+          const color=String(r['Color']||'').trim();
+          const shape=String(r['Shape']||'').trim();
+          const kg=parseFloat(r['Qty (kg)'])||0;
+          const price=parseFloat(r['Rate (₹/kg)'])||0;
+          if(!invNum||!party||!date)return;
+          if(!grouped[invNum])grouped[invNum]={invNum,party,date,items:[]};
+          if(color&&shape){
+            grouped[invNum].items.push({color,shape,kg,price});
+          }
+        });
+        Object.values(grouped).forEach(g=>{
+          const num=parseInt(g.invNum.replace(/[^0-9]/g,''))||serial;
+          newInvoices.push({
+            id:Date.now()+serial,
+            serial:num, party:g.party,
+            date:g.date, items:g.items, orderIds:[]
+          });
+          serial++;
+        });
+        if(newInvoices.length){
+          invoices=newInvoices;
+          nextInvoiceNum=serial;
+          importedInvoices=newInvoices.length;
+          log.push(`✅ Invoices: ${importedInvoices} imported`);
+        } else {
+          log.push('⚠️ Invoices sheet found but no valid rows read');
+        }
+      } else {
+        log.push('ℹ️ No "Invoices" sheet found — invoices unchanged');
+      }
+
+      // ── PARTIES sheet ─────────────────────────────────────────
+      if(wb.SheetNames.includes('Parties')){
+        const ws=wb.Sheets['Parties'];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        const newParties=[];
+        rows.forEach((r,i)=>{
+          const name=String(r['Party Name']||'').trim();
+          const id=parseInt(r['ID'])||i+1;
+          if(name) newParties.push({id,name});
+        });
+        if(newParties.length){
+          parties=newParties;
+          nextPaId=Math.max(...newParties.map(p=>p.id))+1;
+          importedParties=newParties.length;
+          log.push(`✅ Parties: ${importedParties} imported`);
+        } else {
+          log.push('⚠️ Parties sheet found but no valid rows');
+        }
+      } else {
+        log.push('ℹ️ No "Parties" sheet — parties unchanged');
+      }
+
+      // ── CATALOG sheet ─────────────────────────────────────────
+      if(wb.SheetNames.includes('Catalog')){
+        const ws=wb.Sheets['Catalog'];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        const newColors=[], newShapes=[];
+        rows.forEach(r=>{
+          const c=String(r['Colors']||'').trim();
+          const s=String(r['Shapes']||'').trim();
+          if(c&&!newColors.includes(c)) newColors.push(c);
+          if(s&&!newShapes.includes(s)) newShapes.push(s);
+        });
+        if(newColors.length){colors=newColors;importedColors=newColors.length;}
+        if(newShapes.length){shapes=newShapes;importedShapes=newShapes.length;}
+        if(newColors.length||newShapes.length){
+          log.push(`✅ Catalog: ${importedColors} colors, ${importedShapes} shapes imported`);
+        } else {
+          log.push('⚠️ Catalog sheet found but no valid rows');
+        }
+      } else {
+        log.push('ℹ️ No "Catalog" sheet — colors/shapes unchanged');
+      }
+
+      // ── Done ──────────────────────────────────────────────────
+      saveAll();
+      renderAll();
+
+      document.getElementById('import-title').textContent='📥 Import Complete';
+      document.getElementById('import-body').innerHTML=
+        `<div style="margin-bottom:10px;font-weight:600;color:#166534">File: ${file.name}</div>`+
+        log.map(l=>`<div style="padding:4px 0;border-bottom:1px solid #f0f0f0">${l}</div>`).join('')+
+        `<div style="margin-top:12px;font-size:12px;color:#888">All data replaced. Changes ${BIN_ID?'saved to cloud':'saved locally'}.</div>`;
+      document.getElementById('modal-import').classList.add('open');
+
+    } catch(err){
+      document.getElementById('import-title').textContent='❌ Import Failed';
+      document.getElementById('import-body').innerHTML=
+        `<div style="color:#dc2626">Could not read the file. Make sure it is a valid .xlsx file exported from Sitara Sequins.</div>
+         <div style="margin-top:8px;font-size:12px;color:#888">Error: ${err.message}</div>`;
+      document.getElementById('modal-import').classList.add('open');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ============================================================
+// TALLY PRIME XML EXPORT
+// ============================================================
+function exportTallyXML(){
+  if(!invoices.length){alert('No invoices to export.');return;}
+
+  // Build XML for each invoice as a Sales Voucher
+  const voucherXML = invoices.map(inv=>{
+    const items = inv.items || [];
+    const grand = items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFloat(i.price||0)),0);
+    const grandRounded = Math.round(grand);
+    const invDate = (inv.date||'').replace(/-/g,''); // YYYYMMDD
+
+    // Each item becomes a stock inventory entry
+    const inventoryEntries = items.map(i=>{
+      const amt = Math.round(parseFloat(i.kg||0)*parseFloat(i.price||0));
+      return `
+        <INVENTORYENTRY>
+          <STOCKITEMNAME>${esc(i.color+' '+i.shape)}</STOCKITEMNAME>
+          <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+          <ISLASTDEEMEDPOSITIVE>Yes</ISLASTDEEMEDPOSITIVE>
+          <ISAUTONEGATE>No</ISAUTONEGATE>
+          <ISSIMPLEUNIT>Yes</ISSIMPLEUNIT>
+          <RATE>${parseFloat(i.price||0).toFixed(2)}/Kg</RATE>
+          <AMOUNT>-${amt}</AMOUNT>
+          <ACTUALQTY>${parseFloat(i.kg||0).toFixed(3)} Kg</ACTUALQTY>
+          <BILLEDQTY>${parseFloat(i.kg||0).toFixed(3)} Kg</BILLEDQTY>
+          <BATCHALLOCATIONS.LIST>
+            <GODOWNNAME>Main Location</GODOWNNAME>
+            <BATCHNAME>Primary Batch</BATCHNAME>
+            <AMOUNT>-${amt}</AMOUNT>
+            <ACTUALQTY>${parseFloat(i.kg||0).toFixed(3)} Kg</ACTUALQTY>
+            <BILLEDQTY>${parseFloat(i.kg||0).toFixed(3)} Kg</BILLEDQTY>
+          </BATCHALLOCATIONS.LIST>
+        </INVENTORYENTRY>`;
+    }).join('');
+
+    // Ledger entries: party (Dr) and Sales (Cr)
+    const ledgerEntries = `
+        <ALLLEDGERENTRIES.LIST>
+          <LEDGERNAME>${esc(inv.party)}</LEDGERNAME>
+          <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+          <ISLASTDEEMEDPOSITIVE>Yes</ISLASTDEEMEDPOSITIVE>
+          <ISPARTYLEDGER>Yes</ISPARTYLEDGER>
+          <AMOUNT>-${grandRounded}</AMOUNT>
+        </ALLLEDGERENTRIES.LIST>
+        <ALLLEDGERENTRIES.LIST>
+          <LEDGERNAME>Sales Account</LEDGERNAME>
+          <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+          <ISLASTDEEMEDPOSITIVE>No</ISLASTDEEMEDPOSITIVE>
+          <ISPARTYLEDGER>No</ISPARTYLEDGER>
+          <AMOUNT>${grandRounded}</AMOUNT>
+        </ALLLEDGERENTRIES.LIST>`;
+
+    return `
+      <VOUCHER REMOTEID="${inv.id}" VCHKEY="${inv.id}" VCHTYPE="Sales" ACTION="Create" OBJVIEW="Invoice Voucher View">
+        <DATE>${invDate}</DATE>
+        <GUID>SIT-${inv.serial}-${inv.id}</GUID>
+        <NARRATION>Invoice ${invNumLabel(inv.serial)} - ${esc(inv.party)}</NARRATION>
+        <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+        <VOUCHERNUMBER>${invNumLabel(inv.serial)}</VOUCHERNUMBER>
+        <PARTYLEDGERNAME>${esc(inv.party)}</PARTYLEDGERNAME>
+        <ISINVOICE>Yes</ISINVOICE>
+        <PERSISTEDVIEW>Invoice Voucher View</PERSISTEDVIEW>
+        ${ledgerEntries}
+        ${inventoryEntries}
+      </VOUCHER>`;
+  }).join('');
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER>
+    <TALLYREQUEST>Import Data</TALLYREQUEST>
+  </HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>Vouchers</REPORTNAME>
+        <STATICVARIABLES>
+          <SVCURRENTCOMPANY>##SVCURRENTCOMPANY</SVCURRENTCOMPANY>
+        </STATICVARIABLES>
+      </REQUESTDESC>
+      <REQUESTDATA>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          ${voucherXML}
+        </TALLYMESSAGE>
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>`;
+
+  const blob = new Blob([xml], {type:'application/xml'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Sitara_Tally_Import_'+today()+'.xml';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function esc(str){
+  return String(str||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&apos;');
+}
+
+
+// ============================================================
+// ADMIN
+// ============================================================
+function openAdmin(){
+  document.getElementById('admin-locked').style.display='block';
+  document.getElementById('admin-unlocked').style.display='none';
+  document.getElementById('admin-pw-input').value='';
+  document.getElementById('admin-pw-err').style.display='none';
+  document.getElementById('modal-admin').classList.add('open');
+}
+function unlockAdmin(){
+  const pw=document.getElementById('admin-pw-input').value;
+  if(pw===ADMIN_PW){
+    document.getElementById('admin-locked').style.display='none';
+    document.getElementById('admin-unlocked').style.display='block';
+    document.getElementById('admin-pw-changed').style.display='none';
+    document.getElementById('admin-new-pw').value='';
+  } else {
+    document.getElementById('admin-pw-err').style.display='block';
+  }
+}
+function changeAdminPw(){
+  const np=document.getElementById('admin-new-pw').value.trim();
+  if(!np){alert('Enter a new password.');return;}
+  ADMIN_PW=np;
+  localStorage.setItem(LS_PW_KEY,np);
+  document.getElementById('admin-pw-changed').style.display='block';
+  document.getElementById('admin-new-pw').value='';
+}
+function exportBackup(){
+  const payload={colors,shapes,orders,parties,invoices,
+    nextOid,nextPaId,nextInvNum,nextInvoiceNum};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='sitara_backup_'+today()+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function importBackup(input){
+  const file=input.files[0];if(!file)return;
+  input.value='';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      colors      = data.colors      || colors;
+      shapes      = data.shapes      || shapes;
+      orders      = data.orders      || orders;
+      parties     = data.parties     || parties;
+      invoices    = data.invoices    || invoices;
+      nextOid     = data.nextOid     || nextOid;
+      nextPaId    = data.nextPaId    || nextPaId;
+      nextInvNum  = data.nextInvNum  || nextInvNum;
+      nextInvoiceNum=data.nextInvoiceNum||nextInvoiceNum;
+      saveToBin();renderAll();
+      alert('✅ Backup restored successfully!');
+    }catch(e){alert('❌ Invalid backup file.');}
+  };
+  reader.readAsText(file);
+}
+function adminClearOrders(){
+  if(!confirm('DELETE ALL ORDERS? This cannot be undone!'))return;
+  orders=[];nextOid=1;nextInvNum=1;
+  saveToBin();renderOrders();renderInvoiceList();closeModal('modal-admin');
+}
+function adminClearInvoices(){
+  if(!confirm('DELETE ALL INVOICES? This cannot be undone!'))return;
+  invoices=[];nextInvoiceNum=1;
+  saveToBin();renderInvoiceList();closeModal('modal-admin');
+}
+function adminResetAll(){
+  if(!confirm('RESET EVERYTHING? All data will be lost!'))return;
+  if(!confirm('Are you absolutely sure?'))return;
+  colors=[];shapes=[];orders=[];parties=[];invoices=[];
+  nextOid=1;nextPaId=1;nextInvNum=1;nextInvoiceNum=1;
+  saveToBin();renderAll();closeModal('modal-admin');
+}
+</script>
+
+
+</body></html>
