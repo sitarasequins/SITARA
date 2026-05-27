@@ -192,6 +192,23 @@ tr:hover td{background:#fafafa}
 .sbtn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
 .sbtn.active{border-color:#2563eb;color:#fff;background:#2563eb}
 .sbtn .arr{font-size:10px}
+/* Report view buttons */
+.rpt-vbtn{padding:7px 14px;border-radius:8px;border:1.5px solid #ddd;background:#fff;color:#666;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.rpt-vbtn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
+.rpt-vbtn.active{border-color:#2563eb;color:#fff;background:#2563eb}
+/* Report table */
+.rpt-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.rpt-tbl th{text-align:left;padding:9px 12px;background:#f0f4ff;border-bottom:2px solid #dbeafe;font-size:11px;color:#2563eb;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;font-weight:700}
+.rpt-tbl td{padding:9px 12px;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+.rpt-tbl tr:last-child td{border-bottom:none}
+.rpt-tbl tr:hover td{background:#fafbff}
+.rpt-card{background:#fff;border-radius:10px;border:1px solid #e8e8e8;overflow:hidden;margin-bottom:12px}
+.rpt-card-hdr{background:#f0f4ff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dbeafe}
+.rpt-card-title{font-size:14px;font-weight:700;color:#1e3a5f}
+.rpt-card-body{padding:0;overflow-x:auto}
+.rpt-badge-p{background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.rpt-badge-d{background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.rpt-badge-i{background:#dbeafe;color:#2563eb;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
 /* Combo input — type or pick */
 .combo-wrap{position:relative;flex:1;min-width:0}
 .combo-input{width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid #ddd;font-size:12px;outline:none;box-sizing:border-box;background:#fff}
@@ -290,6 +307,7 @@ tr:hover td{background:#fafafa}
     <button class="tab active" onclick="switchTab(&#39;invoices&#39;,this)">Invoices</button>
     <button class="tab" onclick="switchTab(&#39;catalog&#39;,this)">Create</button>
     <button class="tab" onclick="switchTab('production',this)">Pending Work</button>
+    <button class="tab" onclick="switchTab('reports',this)">📊 Reports</button>
   </div>
 
   <!-- ORDERS -->
@@ -392,15 +410,16 @@ tr:hover td{background:#fafafa}
   <div id="tab-catalog" class="view">
     <div class="tag-section">
       <h4>Colors</h4>
-      <div class="tag-grid" id="color-tags"><span class="tag">og100<button class="tag-del" onclick="delColor(&#39;og100&#39;)">✕</button></span><span class="tag">og10<button class="tag-del" onclick="delColor(&#39;og10&#39;)">✕</button></span><span class="tag">dd16<button class="tag-del" onclick="delColor(&#39;dd16&#39;)">✕</button></span><span class="tag">dd15<button class="tag-del" onclick="delColor(&#39;dd15&#39;)">✕</button></span><span class="tag">dd28<button class="tag-del" onclick="delColor(&#39;dd28&#39;)">✕</button></span><span class="tag">dd23<button class="tag-del" onclick="delColor(&#39;dd23&#39;)">✕</button></span><span class="tag">Rcz Paani<button class="tag-del" onclick="delColor(&#39;Rcz Paani&#39;)">✕</button></span><span class="tag">og66<button class="tag-del" onclick="delColor(&#39;og66&#39;)">✕</button></span><span class="tag">og51<button class="tag-del" onclick="delColor(&#39;og51&#39;)">✕</button></span><span class="tag">og135<button class="tag-del" onclick="delColor(&#39;og135&#39;)">✕</button></span><span class="tag">og144<button class="tag-del" onclick="delColor(&#39;og144&#39;)">✕</button></span><span class="tag">og34<button class="tag-del" onclick="delColor(&#39;og34&#39;)">✕</button></span><span class="tag">og92<button class="tag-del" onclick="delColor(&#39;og92&#39;)">✕</button></span><span class="tag">og24<button class="tag-del" onclick="delColor(&#39;og24&#39;)">✕</button></span><span class="tag">og5<button class="tag-del" onclick="delColor(&#39;og5&#39;)">✕</button></span><span class="tag">og19<button class="tag-del" onclick="delColor(&#39;og19&#39;)">✕</button></span><span class="tag">dd17<button class="tag-del" onclick="delColor(&#39;dd17&#39;)">✕</button></span><span class="tag">DD1<button class="tag-del" onclick="delColor(&#39;DD1&#39;)">✕</button></span><span class="tag">DD8<button class="tag-del" onclick="delColor(&#39;DD8&#39;)">✕</button></span><span class="tag">DD3<button class="tag-del" onclick="delColor(&#39;DD3&#39;)">✕</button></span><span class="tag">DD43<button class="tag-del" onclick="delColor(&#39;DD43&#39;)">✕</button></span><span class="tag">DD25<button class="tag-del" onclick="delColor(&#39;DD25&#39;)">✕</button></span><span class="tag">DD2<button class="tag-del" onclick="delColor(&#39;DD2&#39;)">✕</button></span><span class="tag">DD9<button class="tag-del" onclick="delColor(&#39;DD9&#39;)">✕</button></span><span class="tag">Og33<button class="tag-del" onclick="delColor(&#39;Og33&#39;)">✕</button></span><span class="tag">Og118<button class="tag-del" onclick="delColor(&#39;Og118&#39;)">✕</button></span><span class="tag">Og17<button class="tag-del" onclick="delColor(&#39;Og17&#39;)">✕</button></span><span class="tag">Og87<button class="tag-del" onclick="delColor(&#39;Og87&#39;)">✕</button></span><span class="tag">Og98<button class="tag-del" onclick="delColor(&#39;Og98&#39;)">✕</button></span><span class="tag">Og55<button class="tag-del" onclick="delColor(&#39;Og55&#39;)">✕</button></span><span class="tag">Og6<button class="tag-del" onclick="delColor(&#39;Og6&#39;)">✕</button></span><span class="tag">Og54<button class="tag-del" onclick="delColor(&#39;Og54&#39;)">✕</button></span><span class="tag">Tg78<button class="tag-del" onclick="delColor(&#39;Tg78&#39;)">✕</button></span><span class="tag">Og35<button class="tag-del" onclick="delColor(&#39;Og35&#39;)">✕</button></span><span class="tag">Og133<button class="tag-del" onclick="delColor(&#39;Og133&#39;)">✕</button></span><span class="tag">Og110<button class="tag-del" onclick="delColor(&#39;Og110&#39;)">✕</button></span><span class="tag">Tg137<button class="tag-del" onclick="delColor(&#39;Tg137&#39;)">✕</button></span><span class="tag">Og149<button class="tag-del" onclick="delColor(&#39;Og149&#39;)">✕</button></span><span class="tag">White Pearl<button class="tag-del" onclick="delColor(&#39;White Pearl&#39;)">✕</button></span><span class="tag">Og88<button class="tag-del" onclick="delColor(&#39;Og88&#39;)">✕</button></span></div>
-      <div class="tag-add-row">
-        <input id="new-color" type="text" placeholder="e.g. Gold">
+      <div class="tag-grid" id="color-tags" style="display:none"><span class="tag">og100<button class="tag-del" onclick="delColor(&#39;og100&#39;)">✕</button></span><span class="tag">og10<button class="tag-del" onclick="delColor(&#39;og10&#39;)">✕</button></span><span class="tag">dd16<button class="tag-del" onclick="delColor(&#39;dd16&#39;)">✕</button></span><span class="tag">dd15<button class="tag-del" onclick="delColor(&#39;dd15&#39;)">✕</button></span><span class="tag">dd28<button class="tag-del" onclick="delColor(&#39;dd28&#39;)">✕</button></span><span class="tag">dd23<button class="tag-del" onclick="delColor(&#39;dd23&#39;)">✕</button></span><span class="tag">Rcz Paani<button class="tag-del" onclick="delColor(&#39;Rcz Paani&#39;)">✕</button></span><span class="tag">og66<button class="tag-del" onclick="delColor(&#39;og66&#39;)">✕</button></span><span class="tag">og51<button class="tag-del" onclick="delColor(&#39;og51&#39;)">✕</button></span><span class="tag">og135<button class="tag-del" onclick="delColor(&#39;og135&#39;)">✕</button></span><span class="tag">og144<button class="tag-del" onclick="delColor(&#39;og144&#39;)">✕</button></span><span class="tag">og34<button class="tag-del" onclick="delColor(&#39;og34&#39;)">✕</button></span><span class="tag">og92<button class="tag-del" onclick="delColor(&#39;og92&#39;)">✕</button></span><span class="tag">og24<button class="tag-del" onclick="delColor(&#39;og24&#39;)">✕</button></span><span class="tag">og5<button class="tag-del" onclick="delColor(&#39;og5&#39;)">✕</button></span><span class="tag">og19<button class="tag-del" onclick="delColor(&#39;og19&#39;)">✕</button></span><span class="tag">dd17<button class="tag-del" onclick="delColor(&#39;dd17&#39;)">✕</button></span><span class="tag">DD1<button class="tag-del" onclick="delColor(&#39;DD1&#39;)">✕</button></span><span class="tag">DD8<button class="tag-del" onclick="delColor(&#39;DD8&#39;)">✕</button></span><span class="tag">DD3<button class="tag-del" onclick="delColor(&#39;DD3&#39;)">✕</button></span><span class="tag">DD43<button class="tag-del" onclick="delColor(&#39;DD43&#39;)">✕</button></span><span class="tag">DD25<button class="tag-del" onclick="delColor(&#39;DD25&#39;)">✕</button></span><span class="tag">DD2<button class="tag-del" onclick="delColor(&#39;DD2&#39;)">✕</button></span><span class="tag">DD9<button class="tag-del" onclick="delColor(&#39;DD9&#39;)">✕</button></span><span class="tag">Og33<button class="tag-del" onclick="delColor(&#39;Og33&#39;)">✕</button></span><span class="tag">Og118<button class="tag-del" onclick="delColor(&#39;Og118&#39;)">✕</button></span><span class="tag">Og17<button class="tag-del" onclick="delColor(&#39;Og17&#39;)">✕</button></span><span class="tag">Og87<button class="tag-del" onclick="delColor(&#39;Og87&#39;)">✕</button></span><span class="tag">Og98<button class="tag-del" onclick="delColor(&#39;Og98&#39;)">✕</button></span><span class="tag">Og55<button class="tag-del" onclick="delColor(&#39;Og55&#39;)">✕</button></span><span class="tag">Og6<button class="tag-del" onclick="delColor(&#39;Og6&#39;)">✕</button></span><span class="tag">Og54<button class="tag-del" onclick="delColor(&#39;Og54&#39;)">✕</button></span><span class="tag">Tg78<button class="tag-del" onclick="delColor(&#39;Tg78&#39;)">✕</button></span><span class="tag">Og35<button class="tag-del" onclick="delColor(&#39;Og35&#39;)">✕</button></span><span class="tag">Og133<button class="tag-del" onclick="delColor(&#39;Og133&#39;)">✕</button></span><span class="tag">Og110<button class="tag-del" onclick="delColor(&#39;Og110&#39;)">✕</button></span><span class="tag">Tg137<button class="tag-del" onclick="delColor(&#39;Tg137&#39;)">✕</button></span><span class="tag">Og149<button class="tag-del" onclick="delColor(&#39;Og149&#39;)">✕</button></span><span class="tag">White Pearl<button class="tag-del" onclick="delColor(&#39;White Pearl&#39;)">✕</button></span><span class="tag">Og88<button class="tag-del" onclick="delColor(&#39;Og88&#39;)">✕</button></span></div>
+      <div class="tag-add-row" style="flex-wrap:wrap;gap:6px">
+        <input id="new-color" type="text" placeholder="Color code e.g. og100" style="flex:1;min-width:100px">
+        <input id="new-color-alias" type="text" placeholder="Alias e.g. Golden (optional)" style="flex:1;min-width:120px">
         <button class="btn btn-primary" onclick="addColor()">Add</button>
       </div>
     </div>
     <div class="tag-section">
       <h4>Shapes</h4>
-      <div class="tag-grid" id="shape-tags"><span class="tag">1014<button class="tag-del" onclick="delShape(&#39;1014&#39;)">✕</button></span><span class="tag">2n<button class="tag-del" onclick="delShape(&#39;2n&#39;)">✕</button></span><span class="tag">3n<button class="tag-del" onclick="delShape(&#39;3n&#39;)">✕</button></span><span class="tag">4n<button class="tag-del" onclick="delShape(&#39;4n&#39;)">✕</button></span><span class="tag">4fc<button class="tag-del" onclick="delShape(&#39;4fc&#39;)">✕</button></span><span class="tag">5fc<button class="tag-del" onclick="delShape(&#39;5fc&#39;)">✕</button></span><span class="tag">4K<button class="tag-del" onclick="delShape(&#39;4K&#39;)">✕</button></span><span class="tag">5n<button class="tag-del" onclick="delShape(&#39;5n&#39;)">✕</button></span><span class="tag">1026<button class="tag-del" onclick="delShape(&#39;1026&#39;)">✕</button></span><span class="tag">1027<button class="tag-del" onclick="delShape(&#39;1027&#39;)">✕</button></span><span class="tag">6/1<button class="tag-del" onclick="delShape(&#39;6/1&#39;)">✕</button></span><span class="tag">8/1<button class="tag-del" onclick="delShape(&#39;8/1&#39;)">✕</button></span></div>
+      <div class="tag-grid" id="shape-tags" style="display:none"><span class="tag">1014<button class="tag-del" onclick="delShape(&#39;1014&#39;)">✕</button></span><span class="tag">2n<button class="tag-del" onclick="delShape(&#39;2n&#39;)">✕</button></span><span class="tag">3n<button class="tag-del" onclick="delShape(&#39;3n&#39;)">✕</button></span><span class="tag">4n<button class="tag-del" onclick="delShape(&#39;4n&#39;)">✕</button></span><span class="tag">4fc<button class="tag-del" onclick="delShape(&#39;4fc&#39;)">✕</button></span><span class="tag">5fc<button class="tag-del" onclick="delShape(&#39;5fc&#39;)">✕</button></span><span class="tag">4K<button class="tag-del" onclick="delShape(&#39;4K&#39;)">✕</button></span><span class="tag">5n<button class="tag-del" onclick="delShape(&#39;5n&#39;)">✕</button></span><span class="tag">1026<button class="tag-del" onclick="delShape(&#39;1026&#39;)">✕</button></span><span class="tag">1027<button class="tag-del" onclick="delShape(&#39;1027&#39;)">✕</button></span><span class="tag">6/1<button class="tag-del" onclick="delShape(&#39;6/1&#39;)">✕</button></span><span class="tag">8/1<button class="tag-del" onclick="delShape(&#39;8/1&#39;)">✕</button></span></div>
       <div class="tag-add-row">
         <input id="new-shape" type="text" placeholder="e.g. Round">
         <button class="btn btn-primary" onclick="addShape()">Add</button>
@@ -767,6 +786,64 @@ tr:hover td{background:#fafafa}
       </div>
     </div>
   </div>
+  <!-- REPORTS -->
+  <div id="tab-reports" class="view">
+
+    <!-- FILTER BAR -->
+    <div style="background:#f8f9fa;border-radius:10px;padding:12px 14px;margin-bottom:14px;border:1px solid #e8e8e8">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Filters</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+
+        <!-- Date Range -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#888">From</span>
+          <input type="date" id="rpt-from" onchange="renderReport()"
+            style="padding:6px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
+          <span style="font-size:12px;color:#888">To</span>
+          <input type="date" id="rpt-to" onchange="renderReport()"
+            style="padding:6px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
+        </div>
+
+        <!-- Party -->
+        <select id="rpt-party" onchange="renderReport()"
+          style="padding:6px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
+          <option value="">All Parties</option>
+        </select>
+
+        <!-- Color -->
+        <select id="rpt-color" onchange="renderReport()"
+          style="padding:6px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
+          <option value="">All Colors</option>
+        </select>
+
+        <!-- Shape -->
+        <select id="rpt-shape" onchange="renderReport()"
+          style="padding:6px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
+          <option value="">All Shapes</option>
+        </select>
+
+        <button class="btn btn-sm" onclick="clearRptFilter()" style="font-size:12px">✕ Clear</button>
+        <button class="btn btn-sm" onclick="exportReportXLS()" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;font-size:12px">📊 Export XLS</button>
+      </div>
+    </div>
+
+    <!-- VIEW TOGGLE -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="rpt-vbtn active" id="rvb-summary"   onclick="setRptView('summary',this)">📋 Summary</button>
+      <button class="rpt-vbtn"        id="rvb-orders"    onclick="setRptView('orders',this)">📦 Orders</button>
+      <button class="rpt-vbtn"        id="rvb-invoices"  onclick="setRptView('invoices',this)">🧾 Invoices</button>
+      <button class="rpt-vbtn"        id="rvb-pending"   onclick="setRptView('pending',this)">⏳ Pending</button>
+      <button class="rpt-vbtn"        id="rvb-partywise" onclick="setRptView('partywise',this)">👥 Party-wise</button>
+      <button class="rpt-vbtn"        id="rvb-itemwise"  onclick="setRptView('itemwise',this)">🎨 Item-wise</button>
+    </div>
+
+    <!-- STATS BAR -->
+    <div id="rpt-stats" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+
+    <!-- REPORT CONTENT -->
+    <div id="rpt-content"></div>
+  </div>
+
 </div>
 
 <script>
@@ -1083,7 +1160,7 @@ let invoices = [
     "orderIds": []
   }
 ];
-let nextOid=12, nextPaId=9, nextInvNum=12, nextInvoiceNum=2;
+let nextOid=12, nextPaId=9, nextInvNum=12, nextInvoiceNum=4;
 // ─────────────────────────────────────────────────────────────────────────
 
 let filt='all', editOid=null, editInvId=null, ovOid=null, pdPartyId=null;
@@ -1254,7 +1331,7 @@ function totalAmt(o){return o.items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFl
 function normalizeStr(s){return s.trim();}
 function ciIncludes(arr,val){return arr.some(x=>x.toLowerCase()===val.toLowerCase().trim());}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-function renderAll(){renderOrders();renderInvoiceList();renderCatalog();renderParties();setToday();}
+function renderAll(){renderOrders();renderInvoiceList();renderCatalog();renderParties();setToday();renderReport();}
 
 // ============================================================
 // TABS
@@ -1262,13 +1339,10 @@ function renderAll(){renderOrders();renderInvoiceList();renderCatalog();renderPa
 function switchTab(t,el){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  ['orders','invoices','catalog','production'].forEach(id=>
-    document.getElementById('tab-'+id).classList.toggle('active',id===t));
-  document.getElementById('view-invoice').style.display='none';
-  document.getElementById('view-ledger').style.display='none';
-  if(t==='production') renderProduction();
-  if(t==='invoices'){ renderInvoiceList(); resetInvForm(); }
-  if(t==='orders') resetOrderForm();
+  ['orders','invoices','catalog','production','reports'].forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('active',id===t);
+  });
+  if(t==='reports') renderReport();
 }
 function setF(f,el){
   // kept for compatibility but no longer used in orders tab
@@ -1376,16 +1450,49 @@ function renderOrders(){
 // ============================================================
 // CATALOG
 // ============================================================
+function colorName(c){ return typeof c==='object'?c.name:c; }
+function colorAlias(c){ return typeof c==='object'?c.alias||'':''; }
+function colorSearchStr(c){ return colorName(c)+'|'+(colorAlias(c)||''); }
+
 function renderCatalog(){
   document.getElementById('color-tags').innerHTML=colors.length
-    ?colors.map(c=>`<span class="tag">${c}<button class="tag-del" onclick="delColor('${c}')">✕</button></span>`).join('')
+    ?colors.map((c,i)=>{
+      const name=colorName(c); const alias=colorAlias(c);
+      return `<span class="tag" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px">
+        <span>
+          <strong>${name}</strong>
+          ${alias?`<span style="font-size:10px;color:#888;margin-left:3px">${alias}</span>`:''}
+        </span>
+        <button class="tag-del" style="font-size:9px;padding:1px 4px;margin-left:2px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:3px" onclick="editColorAlias(${i})" title="Edit alias">✎</button>
+        <button class="tag-del" onclick="delColor('${name}')">✕</button>
+      </span>`;
+    }).join('')
     :'<span style="font-size:13px;color:#bbb">No colors yet</span>';
   document.getElementById('shape-tags').innerHTML=shapes.length
     ?shapes.map(s=>`<span class="tag">${s}<button class="tag-del" onclick="delShape('${s}')">✕</button></span>`).join('')
     :'<span style="font-size:13px;color:#bbb">No shapes yet</span>';
 }
-function addColor(){const inp=document.getElementById('new-color');const v=normalizeStr(inp.value);if(!v||ciIncludes(colors,v))return;colors.push(v);inp.value='';saveAll();renderCatalog();}
-function delColor(c){colors=colors.filter(x=>x!==c);saveAll();renderCatalog();}
+function editColorAlias(idx){
+  const c=colors[idx];
+  const name=colorName(c);
+  const cur=colorAlias(c);
+  const alias=prompt('Alias for '+name+' (leave blank to remove):',cur);
+  if(alias===null)return;
+  colors[idx]={name,alias:alias.trim()};
+  saveAll();renderCatalog();
+}
+function addColor(){
+  const inp=document.getElementById('new-color');
+  const aliasInp=document.getElementById('new-color-alias');
+  const v=normalizeStr(inp.value);
+  if(!v)return;
+  if(colors.some(c=>colorName(c).toLowerCase()===v.toLowerCase())){alert('Color already exists.');return;}
+  const alias=(aliasInp?aliasInp.value.trim():'');
+  colors.push(alias?{name:v,alias}:v);
+  inp.value=''; if(aliasInp)aliasInp.value='';
+  saveAll();renderCatalog();
+}
+function delColor(c){colors=colors.filter(x=>colorName(x)!==c);saveAll();renderCatalog();}
 function addShape(){const inp=document.getElementById('new-shape');const v=normalizeStr(inp.value);if(!v||ciIncludes(shapes,v))return;shapes.push(v);inp.value='';saveAll();renderCatalog();}
 function delShape(s){shapes=shapes.filter(x=>x!==s);saveAll();renderCatalog();}
 document.getElementById('new-color').addEventListener('keydown',e=>{if(e.key==='Enter')addColor();});
@@ -1441,18 +1548,61 @@ document.getElementById('new-party').addEventListener('keydown',e=>{if(e.key==='
 // ============================================================
 // ORDERS
 // ============================================================
-function colorOptions(sel){return colors.map(c=>`<option value="${c}" ${c===sel?'selected':''}>${c}</option>`).join('')||'<option>Add colors first</option>';}
+function colorOptions(sel){
+  return colors.map(c=>{
+    const n=colorName(c); const a=colorAlias(c);
+    const label=a?n+' ('+a+')':n;
+    return `<option value="${n}" ${n===sel?'selected':''}>${label}</option>`;
+  }).join('')||'<option>Add colors first</option>';
+}
 function shapeOptions(sel){return shapes.map(s=>`<option value="${s}" ${s===sel?'selected':''}>${s}</option>`).join('')||'<option>Add shapes first</option>';}
 
 function makeCombo(list, val, cls){
   const uid='cb'+Math.random().toString(36).slice(2,7);
-  const listJson=JSON.stringify(list).replace(/"/g,'&quot;');
+  // For color combos build {label, value} list including aliases
+  let comboList;
+  if(cls==='color-combo'){
+    comboList=colors.map(c=>({value:colorName(c),label:colorAlias(c)?colorName(c)+' ('+colorAlias(c)+')':colorName(c)}));
+  } else {
+    comboList=list.map(s=>({value:s,label:s}));
+  }
+  const listJson=JSON.stringify(comboList).replace(/"/g,'&quot;');
   return `<div class="combo-wrap">
     <input class="combo-input ${cls}" type="text" value="${val||''}" placeholder="Type or pick..." autocomplete="off"
-      onfocus="openCombo(this,'${uid}',${listJson})"
-      oninput="filterCombo(this,'${uid}',${listJson})">
+      onfocus="openComboObj(this,'${uid}',${listJson})"
+      oninput="filterComboObj(this,'${uid}',${listJson})">
     <div class="combo-drop" id="${uid}"></div>
   </div>`;
+}
+function openComboObj(inp,uid,list){
+  closeAllCombos();
+  const drop=document.getElementById(uid);
+  const rect=inp.getBoundingClientRect();
+  drop.style.top=(rect.bottom+2)+'px';
+  drop.style.left=rect.left+'px';
+  drop.style.width=Math.max(rect.width,130)+'px';
+  filterComboObj(inp,uid,list,true);
+}
+function filterComboObj(inp,uid,list,forceOpen){
+  const q=inp.value.toLowerCase();
+  const drop=document.getElementById(uid);
+  const filtered=list.filter(x=>x.label.toLowerCase().includes(q)||x.value.toLowerCase().includes(q)).slice(0,2);
+  if(!filtered.length){drop.classList.remove('open');return;}
+  drop.innerHTML=filtered.map((x,i)=>{
+    const safe=x.label.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    return `<div class="combo-opt" data-uid="${uid}" onmousedown="pickComboObjIdx('${uid}',${i},event)">${safe}</div>`;
+  }).join('');
+  drop._data=filtered;
+  drop.classList.add('open');
+}
+function pickComboObjIdx(uid,idx,e){
+  e.preventDefault();
+  const drop=document.getElementById(uid);
+  const val=drop._data?drop._data[idx].value:'';
+  const inp=drop.closest('.combo-wrap').querySelector('.combo-input');
+  inp.value=val;
+  drop.classList.remove('open');
+  if(drop.closest('#inv-items-container'))updateInvFormTotal();
 }
 // Close all combos
 function closeAllCombos(){
@@ -1630,6 +1780,9 @@ function saveInvoice(){
     const inv=invoices.find(x=>x.id===editInvId);
     if(inv){inv.date=date;inv.items=items;}
   } else {
+    // Always use max serial + 1 to avoid duplicates
+    const maxSerial=invoices.reduce((m,i)=>Math.max(m,i.serial||0),0);
+    if(nextInvoiceNum<=maxSerial) nextInvoiceNum=maxSerial+1;
     invoices.push({id:Date.now(),serial:nextInvoiceNum++,party,date,items,orderIds:[]});
   }
   resetInvForm();
@@ -2624,6 +2777,360 @@ function esc(str){
 }
 
 
+// ============================================================
+// REPORTS
+// ============================================================
+let rptView = 'summary';
+
+function setRptView(v, el){
+  rptView = v;
+  document.querySelectorAll('.rpt-vbtn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderReport();
+}
+
+function clearRptFilter(){
+  document.getElementById('rpt-from').value='';
+  document.getElementById('rpt-to').value='';
+  document.getElementById('rpt-party').value='';
+  document.getElementById('rpt-color').value='';
+  document.getElementById('rpt-shape').value='';
+  renderReport();
+}
+
+function rptFilterData(){
+  const from = (document.getElementById('rpt-from')||{value:''}).value;
+  const to   = (document.getElementById('rpt-to')||{value:''}).value;
+  const selP = (document.getElementById('rpt-party')||{value:''}).value;
+  const selC = (document.getElementById('rpt-color')||{value:''}).value;
+  const selS = (document.getElementById('rpt-shape')||{value:''}).value;
+
+  let fOrders=[...orders], fInvoices=[...invoices];
+  if(from){ fOrders=fOrders.filter(o=>o.date>=from); fInvoices=fInvoices.filter(i=>i.date>=from); }
+  if(to){   fOrders=fOrders.filter(o=>o.date<=to);   fInvoices=fInvoices.filter(i=>i.date<=to);   }
+  if(selP){ fOrders=fOrders.filter(o=>o.party===selP); fInvoices=fInvoices.filter(i=>i.party===selP); }
+  if(selC){
+    fOrders=fOrders.map(o=>({...o,items:o.items.filter(i=>i.color===selC)})).filter(o=>o.items.length);
+    fInvoices=fInvoices.map(inv=>({...inv,items:(inv.items||[]).filter(i=>i.color===selC)})).filter(inv=>inv.items.length);
+  }
+  if(selS){
+    fOrders=fOrders.map(o=>({...o,items:o.items.filter(i=>i.shape===selS)})).filter(o=>o.items.length);
+    fInvoices=fInvoices.map(inv=>({...inv,items:(inv.items||[]).filter(i=>i.shape===selS)})).filter(inv=>inv.items.length);
+  }
+  return {fOrders,fInvoices,selP,selC,selS,from,to};
+}
+
+function renderReport(){
+  if(!document.getElementById('rpt-type2') && !document.getElementById('rpt-from')) return;
+
+  // Populate dropdowns
+  const partyEl=document.getElementById('rpt-party');
+  const colorEl=document.getElementById('rpt-color');
+  const shapeEl=document.getElementById('rpt-shape');
+  if(partyEl){
+    const cur=partyEl.value;
+    const allP=[...new Set([...orders.map(o=>o.party),...invoices.map(i=>i.party)])].sort();
+    partyEl.innerHTML='<option value="">All Parties</option>'+allP.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+  }
+  if(colorEl){
+    const cur=colorEl.value;
+    const allC=[...new Set([...orders.flatMap(o=>o.items.map(i=>i.color)),...invoices.flatMap(inv=>(inv.items||[]).map(i=>i.color))])].sort();
+    colorEl.innerHTML='<option value="">All Colors</option>'+allC.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+  }
+  if(shapeEl){
+    const cur=shapeEl.value;
+    const allS=[...new Set([...orders.flatMap(o=>o.items.map(i=>i.shape)),...invoices.flatMap(inv=>(inv.items||[]).map(i=>i.shape))])].sort();
+    shapeEl.innerHTML='<option value="">All Shapes</option>'+allS.map(s=>`<option value="${s}" ${s===cur?'selected':''}>${s}</option>`).join('');
+  }
+
+  const {fOrders,fInvoices,selP,selC,selS,from,to}=rptFilterData();
+  const statsEl=document.getElementById('rpt-stats');
+  const contentEl=document.getElementById('rpt-content');
+
+  // Stats
+  const totalOrdKg=fOrders.reduce((s,o)=>s+o.items.reduce((ss,i)=>ss+parseFloat(i.kg||0),0),0);
+  const totalInvKg=fInvoices.reduce((s,inv)=>s+(inv.items||[]).reduce((ss,i)=>ss+parseFloat(i.kg||0),0),0);
+  const totalInvAmt=fInvoices.reduce((s,inv)=>s+(inv.items||[]).reduce((ss,i)=>ss+parseFloat(i.kg||0)*parseFloat(i.price||0),0),0);
+  const pendingOrd=fOrders.filter(o=>o.status==='Pending').length;
+  const pendingKg=fOrders.filter(o=>o.status==='Pending').reduce((s,o)=>s+o.items.reduce((ss,i)=>ss+parseFloat(i.kg||0),0),0);
+
+  // Active filter tags
+  const tags=[];
+  if(from||to) tags.push(`📅 ${from||'…'} → ${to||'…'}`);
+  if(selP) tags.push(`👤 ${selP}`);
+  if(selC) tags.push(`🎨 ${selC}`);
+  if(selS) tags.push(`◆ ${selS}`);
+  const tagHtml=tags.length?`<div style="width:100%;margin-bottom:6px">${tags.map(t=>`<span style="background:#dbeafe;color:#1d4ed8;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;margin-right:6px">${t}</span>`).join('')}</div>`:'';
+
+  statsEl.innerHTML=tagHtml+`
+    <div class="stat"><div class="stat-label">Orders</div><div class="stat-val">${fOrders.length}</div></div>
+    <div class="stat"><div class="stat-label">Pending</div><div class="stat-val" style="color:#d97706">${pendingOrd}</div></div>
+    <div class="stat"><div class="stat-label">Ordered kg</div><div class="stat-val">${totalOrdKg.toFixed(2)}</div></div>
+    <div class="stat"><div class="stat-label">Invoices</div><div class="stat-val">${fInvoices.length}</div></div>
+    <div class="stat"><div class="stat-label">Invoiced kg</div><div class="stat-val" style="color:#16a34a">${totalInvKg.toFixed(2)}</div></div>
+    <div class="stat"><div class="stat-label">Pending kg</div><div class="stat-val" style="color:#d97706">${(totalOrdKg-totalInvKg).toFixed(2)}</div></div>
+    <div class="stat"><div class="stat-label">Invoice Amt</div><div class="stat-val" style="color:#2563eb">${fmt(totalInvAmt)}</div></div>`;
+
+  if(rptView==='summary')   rptSummary(fOrders,fInvoices,contentEl);
+  else if(rptView==='orders')    rptOrders(fOrders,contentEl);
+  else if(rptView==='invoices')  rptInvoices(fInvoices,contentEl);
+  else if(rptView==='pending')   rptPending(fOrders,fInvoices,contentEl);
+  else if(rptView==='partywise') rptPartyWise(fOrders,fInvoices,contentEl);
+  else if(rptView==='itemwise')  rptItemWise(fOrders,fInvoices,contentEl);
+}
+
+function rptTbl(headers,rows){
+  if(!rows.length) return '<div class="empty">No data for selected filters.</div>';
+  return `<div style="overflow-x:auto"><table class="rpt-tbl">
+    <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ── SUMMARY VIEW ─────────────────────────────────────────────
+function rptSummary(fOrders,fInvoices,el){
+  // Top parties by ordered kg
+  const pm={};
+  fOrders.forEach(o=>{
+    if(!pm[o.party])pm[o.party]={ordKg:0,invKg:0,invAmt:0,orders:0,pending:0};
+    pm[o.party].orders++;
+    pm[o.party].ordKg+=o.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    if(o.status==='Pending')pm[o.party].pending++;
+  });
+  fInvoices.forEach(inv=>{
+    if(!pm[inv.party])pm[inv.party]={ordKg:0,invKg:0,invAmt:0,orders:0,pending:0};
+    pm[inv.party].invKg+=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    pm[inv.party].invAmt+=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);
+  });
+
+  const partyRows=Object.entries(pm).sort((a,b)=>b[1].ordKg-a[1].ordKg).map(([p,d])=>[
+    `<strong>${p}</strong>`,
+    d.orders,
+    `${d.ordKg.toFixed(2)}`,
+    `${d.invKg.toFixed(2)}`,
+    `<span style="color:#d97706;font-weight:600">${(d.ordKg-d.invKg).toFixed(2)}</span>`,
+    `<strong style="color:#2563eb">${fmt(d.invAmt)}</strong>`
+  ]);
+
+  // Top items
+  const im={};
+  fOrders.forEach(o=>o.items.forEach(i=>{
+    const k=i.color+'|'+i.shape;
+    if(!im[k])im[k]={color:i.color,shape:i.shape,ordKg:0,invKg:0};
+    im[k].ordKg+=parseFloat(i.kg||0);
+  }));
+  fInvoices.forEach(inv=>(inv.items||[]).forEach(i=>{
+    const k=i.color+'|'+i.shape;
+    if(!im[k])im[k]={color:i.color,shape:i.shape,ordKg:0,invKg:0};
+    im[k].invKg+=parseFloat(i.kg||0);
+  }));
+  const itemRows=Object.values(im).sort((a,b)=>b.ordKg-a.ordKg).slice(0,10).map(d=>[
+    `<strong>${d.color}</strong>`,d.shape,
+    `${d.ordKg.toFixed(2)}`,`${d.invKg.toFixed(2)}`,
+    `<span style="color:#d97706;font-weight:600">${(d.ordKg-d.invKg).toFixed(2)}</span>`
+  ]);
+
+  el.innerHTML=`
+    <div class="rpt-card" style="margin-bottom:14px">
+      <div class="rpt-card-hdr"><div class="rpt-card-title">👥 Party Summary</div></div>
+      <div class="rpt-card-body">${rptTbl(['Party','Orders','Ordered kg','Invoiced kg','Pending kg','Inv Amount'],partyRows)}</div>
+    </div>
+    <div class="rpt-card">
+      <div class="rpt-card-hdr"><div class="rpt-card-title">🎨 Top 10 Items</div></div>
+      <div class="rpt-card-body">${rptTbl(['Color','Shape','Ordered kg','Invoiced kg','Pending kg'],itemRows)}</div>
+    </div>`;
+}
+
+// ── ORDERS VIEW ───────────────────────────────────────────────
+function rptOrders(fOrders,el){
+  const rows=[...fOrders].sort((a,b)=>b.date.localeCompare(a.date)).map(o=>{
+    const kg=o.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    const items=o.items.map(i=>`${i.color} ${i.shape} ${parseFloat(i.kg).toFixed(2)}kg`).join(' | ');
+    return[
+      o.date,
+      invLabel(o.invNum),
+      `<strong>${o.party}</strong>`,
+      `${kg.toFixed(2)} kg`,
+      o.status==='Pending'?`<span class="rpt-badge-p">Pending</span>`:`<span class="rpt-badge-d">Delivered</span>`,
+      `<span style="font-size:11px;color:#888">${items}</span>`
+    ];
+  });
+  el.innerHTML=`<div class="rpt-card"><div class="rpt-card-hdr"><div class="rpt-card-title">📦 Orders (${fOrders.length})</div></div>
+    <div class="rpt-card-body">${rptTbl(['Date','Order#','Party','Total kg','Status','Items'],rows)}</div></div>`;
+}
+
+// ── INVOICES VIEW ─────────────────────────────────────────────
+function rptInvoices(fInvoices,el){
+  const rows=[...fInvoices].sort((a,b)=>b.date.localeCompare(a.date)).map(inv=>{
+    const kg=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    const amt=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);
+    const items=(inv.items||[]).map(i=>`${i.color} ${i.shape} ${parseFloat(i.kg).toFixed(2)}kg@${i.price}`).join(' | ');
+    return[
+      inv.date,
+      `<span class="rpt-badge-i">${invNumLabel(inv.serial)}</span>`,
+      `<strong>${inv.party}</strong>`,
+      `${kg.toFixed(2)} kg`,
+      `<strong style="color:#2563eb">${fmt(amt)}</strong>`,
+      `<span style="font-size:11px;color:#888">${items}</span>`
+    ];
+  });
+  el.innerHTML=`<div class="rpt-card"><div class="rpt-card-hdr"><div class="rpt-card-title">🧾 Invoices (${fInvoices.length})</div></div>
+    <div class="rpt-card-body">${rptTbl(['Date','Invoice#','Party','Total kg','Amount','Items'],rows)}</div></div>`;
+}
+
+// ── PENDING VIEW ──────────────────────────────────────────────
+function rptPending(fOrders,fInvoices,el){
+  // Build per-party per-item pending (ordered - invoiced)
+  const pm={};
+  fOrders.filter(o=>o.status==='Pending').forEach(o=>{
+    o.items.forEach(i=>{
+      const k=o.party+'||'+i.color+'||'+i.shape;
+      if(!pm[k])pm[k]={party:o.party,color:i.color,shape:i.shape,ordKg:0,invKg:0,dates:[]};
+      pm[k].ordKg+=parseFloat(i.kg||0);
+      if(!pm[k].dates.includes(o.date))pm[k].dates.push(o.date);
+    });
+  });
+  fInvoices.forEach(inv=>(inv.items||[]).forEach(i=>{
+    const k=inv.party+'||'+i.color+'||'+i.shape;
+    if(!pm[k])pm[k]={party:inv.party,color:i.color,shape:i.shape,ordKg:0,invKg:0,dates:[]};
+    pm[k].invKg+=parseFloat(i.kg||0);
+  }));
+  const rows=Object.values(pm)
+    .map(d=>({...d,netKg:d.ordKg-d.invKg}))
+    .filter(d=>d.netKg>0.001)
+    .sort((a,b)=>b.netKg-a.netKg)
+    .map(d=>[
+      `<strong>${d.party}</strong>`,
+      d.color, d.shape,
+      `${d.ordKg.toFixed(2)}`,
+      `${d.invKg.toFixed(2)}`,
+      `<strong style="color:#d97706">${d.netKg.toFixed(2)} kg</strong>`,
+      `<span style="font-size:11px;color:#aaa">${d.dates.sort().join(', ')}</span>`
+    ]);
+  el.innerHTML=`<div class="rpt-card"><div class="rpt-card-hdr">
+    <div class="rpt-card-title">⏳ Pending Orders</div>
+    <div style="font-size:12px;color:#d97706;font-weight:600">${rows.length} items pending</div>
+    </div>
+    <div class="rpt-card-body">${rptTbl(['Party','Color','Shape','Ordered','Invoiced','Net Pending','Order Dates'],rows)}</div></div>`;
+}
+
+// ── PARTY-WISE VIEW ───────────────────────────────────────────
+function rptPartyWise(fOrders,fInvoices,el){
+  const pm={};
+  fOrders.forEach(o=>{
+    if(!pm[o.party])pm[o.party]={orders:0,ordKg:0,invKg:0,invAmt:0,pending:0,delivered:0};
+    pm[o.party].orders++;
+    pm[o.party].ordKg+=o.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    if(o.status==='Pending')pm[o.party].pending++;
+    else pm[o.party].delivered++;
+  });
+  fInvoices.forEach(inv=>{
+    if(!pm[inv.party])pm[inv.party]={orders:0,ordKg:0,invKg:0,invAmt:0,pending:0,delivered:0};
+    pm[inv.party].invKg+=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    pm[inv.party].invAmt+=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);
+  });
+  const rows=Object.entries(pm).sort((a,b)=>b[1].ordKg-a[1].ordKg).map(([p,d])=>[
+    `<strong>${p}</strong>`,
+    d.orders,
+    `<span class="rpt-badge-p">${d.pending}</span>`,
+    `<span class="rpt-badge-d">${d.delivered}</span>`,
+    `${d.ordKg.toFixed(2)}`,
+    `${d.invKg.toFixed(2)}`,
+    `<span style="color:#d97706;font-weight:600">${(d.ordKg-d.invKg).toFixed(2)}</span>`,
+    `<strong style="color:#2563eb">${fmt(d.invAmt)}</strong>`
+  ]);
+  el.innerHTML=`<div class="rpt-card"><div class="rpt-card-hdr"><div class="rpt-card-title">👥 Party-wise Report</div></div>
+    <div class="rpt-card-body">${rptTbl(['Party','Orders','Pending','Delivered','Ordered kg','Invoiced kg','Net Pending kg','Inv Amount'],rows)}</div></div>`;
+}
+
+// ── ITEM-WISE VIEW ────────────────────────────────────────────
+function rptItemWise(fOrders,fInvoices,el){
+  const im={};
+  fOrders.forEach(o=>o.items.forEach(i=>{
+    const k=i.color+'||'+i.shape;
+    if(!im[k])im[k]={color:i.color,shape:i.shape,ordKg:0,invKg:0,invAmt:0,parties:new Set()};
+    im[k].ordKg+=parseFloat(i.kg||0);
+    im[k].parties.add(o.party);
+  }));
+  fInvoices.forEach(inv=>(inv.items||[]).forEach(i=>{
+    const k=i.color+'||'+i.shape;
+    if(!im[k])im[k]={color:i.color,shape:i.shape,ordKg:0,invKg:0,invAmt:0,parties:new Set()};
+    im[k].invKg+=parseFloat(i.kg||0);
+    im[k].invAmt+=parseFloat(i.kg||0)*parseFloat(i.price||0);
+  }));
+  const rows=Object.values(im).sort((a,b)=>b.ordKg-a.ordKg).map(d=>[
+    `<strong>${d.color}</strong>`,
+    d.shape,
+    `${d.ordKg.toFixed(2)}`,
+    `${d.invKg.toFixed(2)}`,
+    `<span style="color:#d97706;font-weight:600">${(d.ordKg-d.invKg).toFixed(2)}</span>`,
+    `<strong style="color:#2563eb">${fmt(d.invAmt)}</strong>`,
+    `<span style="font-size:11px;color:#888">${[...d.parties].join(', ')}</span>`
+  ]);
+  el.innerHTML=`<div class="rpt-card"><div class="rpt-card-hdr"><div class="rpt-card-title">🎨 Item-wise Report</div></div>
+    <div class="rpt-card-body">${rptTbl(['Color','Shape','Ordered kg','Invoiced kg','Net Pending kg','Inv Amount','Parties'],rows)}</div></div>`;
+}
+
+// Export all views to XLS
+function exportReportXLS(){
+  if(typeof XLSX==='undefined'){alert('XLSX not loaded');return;}
+  const {fOrders,fInvoices}=rptFilterData();
+  const wb=XLSX.utils.book_new();
+
+  // Summary
+  const pm={};
+  fOrders.forEach(o=>{if(!pm[o.party])pm[o.party]={ordKg:0,invKg:0,invAmt:0,orders:0,pending:0};pm[o.party].orders++;pm[o.party].ordKg+=o.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);if(o.status==='Pending')pm[o.party].pending++;});
+  fInvoices.forEach(inv=>{if(!pm[inv.party])pm[inv.party]={ordKg:0,invKg:0,invAmt:0,orders:0,pending:0};pm[inv.party].invKg+=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);pm[inv.party].invAmt+=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);});
+  const sRows=[['Party','Orders','Pending','Ordered kg','Invoiced kg','Pending kg','Inv Amount']];
+  Object.entries(pm).forEach(([p,d])=>sRows.push([p,d.orders,d.pending,+d.ordKg.toFixed(2),+d.invKg.toFixed(2),+(d.ordKg-d.invKg).toFixed(2),Math.round(d.invAmt)]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sRows),'Party Summary');
+
+  // Orders
+  const oRows=[['Date','Order#','Party','Total kg','Status','Items']];
+  fOrders.sort((a,b)=>b.date.localeCompare(a.date)).forEach(o=>{
+    const kg=o.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    oRows.push([o.date,invLabel(o.invNum),o.party,+kg.toFixed(2),o.status,o.items.map(i=>i.color+' '+i.shape+' '+i.kg+'kg').join(', ')]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(oRows),'Orders');
+
+  // Invoices
+  const iRows=[['Date','Invoice#','Party','Total kg','Amount','Items']];
+  fInvoices.sort((a,b)=>b.date.localeCompare(a.date)).forEach(inv=>{
+    const kg=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    const amt=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);
+    iRows.push([inv.date,invNumLabel(inv.serial),inv.party,+kg.toFixed(2),Math.round(amt),(inv.items||[]).map(i=>i.color+' '+i.shape+' '+i.kg+'kg@'+i.price).join(', ')]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(iRows),'Invoices');
+
+  // Pending
+  const pendMap={};
+  fOrders.filter(o=>o.status==='Pending').forEach(o=>o.items.forEach(i=>{
+    const k=o.party+'||'+i.color+'||'+i.shape;
+    if(!pendMap[k])pendMap[k]={party:o.party,color:i.color,shape:i.shape,ordKg:0,invKg:0};
+    pendMap[k].ordKg+=parseFloat(i.kg||0);
+  }));
+  fInvoices.forEach(inv=>(inv.items||[]).forEach(i=>{
+    const k=inv.party+'||'+i.color+'||'+i.shape;
+    if(!pendMap[k])pendMap[k]={party:inv.party,color:i.color,shape:i.shape,ordKg:0,invKg:0};
+    pendMap[k].invKg+=parseFloat(i.kg||0);
+  }));
+  const pRows=[['Party','Color','Shape','Ordered kg','Invoiced kg','Net Pending kg']];
+  Object.values(pendMap).filter(d=>d.ordKg-d.invKg>0.001).sort((a,b)=>(b.ordKg-b.invKg)-(a.ordKg-a.invKg)).forEach(d=>pRows.push([d.party,d.color,d.shape,+d.ordKg.toFixed(2),+d.invKg.toFixed(2),+(d.ordKg-d.invKg).toFixed(2)]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pRows),'Pending');
+
+  // Item-wise
+  const im={};
+  fOrders.forEach(o=>o.items.forEach(i=>{const k=i.color+'||'+i.shape;if(!im[k])im[k]={color:i.color,shape:i.shape,ordKg:0,invKg:0,invAmt:0};im[k].ordKg+=parseFloat(i.kg||0);}));
+  fInvoices.forEach(inv=>(inv.items||[]).forEach(i=>{const k=i.color+'||'+i.shape;if(!im[k])im[k]={color:i.color,shape:i.shape,ordKg:0,invKg:0,invAmt:0};im[k].invKg+=parseFloat(i.kg||0);im[k].invAmt+=parseFloat(i.kg||0)*parseFloat(i.price||0);}));
+  const mRows=[['Color','Shape','Ordered kg','Invoiced kg','Pending kg','Inv Amount']];
+  Object.values(im).sort((a,b)=>b.ordKg-a.ordKg).forEach(d=>mRows.push([d.color,d.shape,+d.ordKg.toFixed(2),+d.invKg.toFixed(2),+(d.ordKg-d.invKg).toFixed(2),Math.round(d.invAmt)]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(mRows),'Item-wise');
+
+  XLSX.writeFile(wb,'Sitara_Report_'+today()+'.xlsx');
+}
+
+// ============================================================
+// ADMIN
 // ============================================================
 // ADMIN
 // ============================================================
