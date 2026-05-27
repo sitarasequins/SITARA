@@ -192,6 +192,15 @@ tr:hover td{background:#fafafa}
 .sbtn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
 .sbtn.active{border-color:#2563eb;color:#fff;background:#2563eb}
 .sbtn .arr{font-size:10px}
+/* Combo input — type or pick */
+.combo-wrap{position:relative;flex:1;min-width:0}
+.combo-input{width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid #ddd;font-size:12px;outline:none;box-sizing:border-box;background:#fff}
+.combo-input:focus{border-color:#2563eb;background:#f8fbff}
+.combo-drop{position:fixed;background:#fff;border:1.5px solid #2563eb;border-radius:8px;z-index:9999;max-height:120px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15);display:none;min-width:120px}
+.combo-drop.open{display:block}
+.combo-opt{padding:10px 14px;font-size:14px;cursor:pointer;white-space:nowrap;border-bottom:1px solid #f5f5f5;-webkit-tap-highlight-color:transparent}
+.combo-opt:last-child{border-bottom:none}
+.combo-opt:hover,.combo-opt:active{background:#eff6ff;color:#2563eb;font-weight:600}
 .party-pending-card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;border:1px solid #e8e8e8;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .party-pending-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .party-pending-name{font-size:14px;font-weight:700;color:#1a1a1a}
@@ -1417,35 +1426,53 @@ function shapeOptions(sel){return shapes.map(s=>`<option value="${s}" ${s===sel?
 
 function makeCombo(list, val, cls){
   const uid='cb'+Math.random().toString(36).slice(2,7);
+  const listJson=JSON.stringify(list).replace(/"/g,'&quot;');
   return `<div class="combo-wrap">
     <input class="combo-input ${cls}" type="text" value="${val||''}" placeholder="Type or pick..." autocomplete="off"
-      onfocus="openCombo(this,'${uid}',${JSON.stringify(list).replace(/"/g,'&quot;')})"
-      oninput="filterCombo(this,'${uid}',${JSON.stringify(list).replace(/"/g,'&quot;')})"
-      onblur="setTimeout(()=>closeCombo('${uid}'),200)">
+      onfocus="openCombo(this,'${uid}',${listJson})"
+      oninput="filterCombo(this,'${uid}',${listJson})">
     <div class="combo-drop" id="${uid}"></div>
   </div>`;
 }
+// Close all combos
+function closeAllCombos(){
+  document.querySelectorAll('.combo-drop.open').forEach(d=>d.classList.remove('open'));
+}
+document.addEventListener('click', function(e){
+  if(!e.target.classList.contains('combo-input')) closeAllCombos();
+});
+
 function openCombo(inp, uid, list){
-  filterCombo(inp, uid, list);
-  document.getElementById(uid).classList.add('open');
+  closeAllCombos();
+  const drop = document.getElementById(uid);
+  // Position using fixed coords
+  const rect = inp.getBoundingClientRect();
+  drop.style.top  = (rect.bottom + 2) + 'px';
+  drop.style.left = rect.left + 'px';
+  drop.style.width = Math.max(rect.width, 130) + 'px';
+  filterCombo(inp, uid, list, true);
 }
-function filterCombo(inp, uid, list){
-  const q=inp.value.toLowerCase();
-  const drop=document.getElementById(uid);
-  const filtered=list.filter(x=>x.toLowerCase().includes(q));
-  drop.innerHTML=filtered.map(x=>`<div class="combo-opt" onmousedown="pickCombo('${uid}',this,'${x.replace(/'/g,"\'")}',event)">${x}</div>`).join('');
-  if(filtered.length) drop.classList.add('open');
+function filterCombo(inp, uid, list, forceOpen){
+  const q = inp.value.toLowerCase();
+  const drop = document.getElementById(uid);
+  const filtered = list.filter(x => x.toLowerCase().includes(q)).slice(0, 2);
+  if(!filtered.length){ drop.classList.remove('open'); return; }
+  drop.innerHTML = filtered.map(x =>
+    `<div class="combo-opt" onmousedown="pickCombo('${uid}','${x.replace(/\/g,'\\').replace(/'/g,"\'")}',event)">${x}</div>`
+  ).join('');
+  drop.classList.add('open');
 }
-function pickCombo(uid, el, val, e){
+function pickCombo(uid, val, e){
   e.preventDefault();
-  const wrap=document.getElementById(uid);
-  wrap.previousElementSibling.value=val;
-  closeCombo(uid);
+  const drop = document.getElementById(uid);
+  const inp = drop.closest('.combo-wrap').querySelector('.combo-input');
+  inp.value = val;
+  drop.classList.remove('open');
   // trigger total update for invoice
-  if(wrap.closest('#inv-items-container')) updateInvFormTotal();
+  if(drop.closest('#inv-items-container')) updateInvFormTotal();
 }
 function closeCombo(uid){
-  const el=document.getElementById(uid);
+  const el = document.getElementById(uid);
   if(el) el.classList.remove('open');
 }
 
