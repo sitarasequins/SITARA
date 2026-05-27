@@ -252,21 +252,7 @@ tr:hover td{background:#fafafa}
 <body>
 
 <!-- ===== SETUP SCREEN ===== -->
-<div id="setup-screen" style="display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1e3a5f,#2563eb);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:16px;padding:40px 32px;width:90%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center">
-    <div style="font-size:28px;font-weight:800;color:#1e3a5f;margin-bottom:4px">Sitara <span style="color:#2563eb">Sequins</span></div>
-    <div style="font-size:13px;color:#aaa;margin-bottom:28px">Enter password to continue</div>
-    <input type="password" id="setup-adminpw" placeholder="🔒 Password"
-      autocomplete="off"
-      onkeydown="if(event.key==='Enter')doSetup()"
-      style="width:100%;padding:12px 16px;border-radius:9px;border:2px solid #e0e0e0;font-size:15px;outline:none;box-sizing:border-box;text-align:center;letter-spacing:2px;margin-bottom:10px">
-    <div id="setup-err" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px">❌ Wrong password. Try again.</div>
-    <button onclick="doSetup()"
-      style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px">
-      OPEN APP →
-    </button>
-  </div>
-</div>
+<div id="setup-screen" style="display:none"></div>
 
 <!-- ===== MAIN APP ===== -->
 <div id="app" style="display: none;">
@@ -1214,11 +1200,29 @@ function startApp(){
 window.onload = function(){
   ADMIN_PW = localStorage.getItem(LS_PW_KEY) || 'admin';
   loadFromStorage();
-  // Show password screen
-  document.getElementById('setup-screen').style.display='flex';
-  document.getElementById('app').style.display='none';
-  // Focus password input
-  setTimeout(()=>{ const el=document.getElementById('setup-adminpw'); if(el)el.focus(); },300);
+  startApp();
+  setTimeout(async function(){
+    if(window._firebaseReady && window._firestore){
+      try{
+        const {getDoc, DATA_DOC} = window._firestore;
+        const snap = await getDoc(DATA_DOC);
+        if(snap.exists()){
+          const data = snap.data();
+          if(data){
+            colors=data.colors||colors; shapes=data.shapes||shapes;
+            orders=data.orders||orders; parties=data.parties||parties;
+            invoices=data.invoices||invoices;
+            nextOid=data.nextOid||nextOid; nextPaId=data.nextPaId||nextPaId;
+            nextInvNum=data.nextInvNum||nextInvNum;
+            nextInvoiceNum=data.nextInvoiceNum||nextInvoiceNum;
+            renderAll();
+            setSyncStatus('saved','☁ Cloud loaded');
+            setTimeout(()=>setSyncStatus('','☁ Cloud'),2000);
+          }
+        } else { saveToBin(); }
+      } catch(e){ console.error(e); }
+    }
+  }, 1500);
   /*startApp_after_login*/
 };
 
