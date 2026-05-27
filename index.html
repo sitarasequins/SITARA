@@ -858,10 +858,339 @@ let saveTimer = null;
 // ── PRE-LOADED DATA (from Sitara_Sequins_Data.xlsx) ──────────────
 let colors = [];
 let shapes = [];
-let parties = [];
+let parties = [
+  {
+    "id": 1,
+    "name": "A M Zari Lko"
+  },
+  {
+    "id": 2,
+    "name": "A to Z Lko"
+  },
+  {
+    "id": 3,
+    "name": "A Y Zari Lko"
+  },
+  {
+    "id": 4,
+    "name": "Ad Monu Mumbai"
+  },
+  {
+    "id": 5,
+    "name": "Adil Lko"
+  },
+  {
+    "id": 6,
+    "name": "Ajay Kishor Zari Lko"
+  },
+  {
+    "id": 7,
+    "name": "Ak Beads Kolkata"
+  },
+  {
+    "id": 8,
+    "name": "Akhil Seelampur"
+  },
+  {
+    "id": 9,
+    "name": "Arham Kolkata"
+  },
+  {
+    "id": 10,
+    "name": "Ashapura Jodhpur"
+  },
+  {
+    "id": 11,
+    "name": "Aslam Barelly"
+  },
+  {
+    "id": 12,
+    "name": "Atiq Kinari"
+  },
+  {
+    "id": 13,
+    "name": "Avinash"
+  },
+  {
+    "id": 14,
+    "name": "Bhagat Moti"
+  },
+  {
+    "id": 15,
+    "name": "Bilal Loni"
+  },
+  {
+    "id": 16,
+    "name": "Birju Raksol"
+  },
+  {
+    "id": 17,
+    "name": "Chandni Zari Rampur"
+  },
+  {
+    "id": 18,
+    "name": "Devi Saran Lko"
+  },
+  {
+    "id": 19,
+    "name": "Dipiya Beads Subodh"
+  },
+  {
+    "id": 20,
+    "name": "Dipiya Store Pramod"
+  },
+  {
+    "id": 21,
+    "name": "F K Seelampur"
+  },
+  {
+    "id": 22,
+    "name": "FARHAN SIKANDRABAD"
+  },
+  {
+    "id": 23,
+    "name": "Genda Ram Mumbai"
+  },
+  {
+    "id": 24,
+    "name": "Golden Star"
+  },
+  {
+    "id": 25,
+    "name": "Gulmohar Surat"
+  },
+  {
+    "id": 26,
+    "name": "Guptaji Kolkata"
+  },
+  {
+    "id": 27,
+    "name": "Hira Kinari"
+  },
+  {
+    "id": 28,
+    "name": "Honey Moti"
+  },
+  {
+    "id": 29,
+    "name": "Jalarm Patel Vadodra"
+  },
+  {
+    "id": 30,
+    "name": "Jamil Bhai Lko"
+  },
+  {
+    "id": 31,
+    "name": "Jaspal Bhai Mumbai"
+  },
+  {
+    "id": 32,
+    "name": "Javed Bhai Lko"
+  },
+  {
+    "id": 33,
+    "name": "Khusbu General Store"
+  },
+  {
+    "id": 34,
+    "name": "KP Groups Kolkata"
+  },
+  {
+    "id": 35,
+    "name": "KR Impex"
+  },
+  {
+    "id": 36,
+    "name": "Krishna Impex"
+  },
+  {
+    "id": 37,
+    "name": "KTC Surat"
+  },
+  {
+    "id": 38,
+    "name": "M K Kolkata"
+  },
+  {
+    "id": 39,
+    "name": "Mahavir Kolkata"
+  },
+  {
+    "id": 40,
+    "name": "Manita Store"
+  },
+  {
+    "id": 41,
+    "name": "Marudhar Mumbai Sitara"
+  },
+  {
+    "id": 42,
+    "name": "Mashal Dhaga"
+  },
+  {
+    "id": 43,
+    "name": "Mega Agency"
+  },
+  {
+    "id": 44,
+    "name": "Mehtabh Bhai Barelly"
+  },
+  {
+    "id": 45,
+    "name": "Modern Enterprise Lko"
+  },
+  {
+    "id": 46,
+    "name": "Mushir Bhai Lko"
+  },
+  {
+    "id": 47,
+    "name": "Nand Kishore Jain Lko"
+  },
+  {
+    "id": 48,
+    "name": "Nawaz Button"
+  },
+  {
+    "id": 49,
+    "name": "Nemi Nath Surat"
+  },
+  {
+    "id": 50,
+    "name": "NTC Ldh"
+  },
+  {
+    "id": 51,
+    "name": "Pooja Collection Kolkata"
+  },
+  {
+    "id": 52,
+    "name": "Pragati Creation"
+  },
+  {
+    "id": 53,
+    "name": "PTC Kolkata"
+  },
+  {
+    "id": 54,
+    "name": "Rab Zari Barelly"
+  },
+  {
+    "id": 55,
+    "name": "Radhe Beads Seelampur"
+  },
+  {
+    "id": 56,
+    "name": "Rahul Gonda"
+  },
+  {
+    "id": 57,
+    "name": "Rampur Abdul Matin"
+  },
+  {
+    "id": 58,
+    "name": "Rangeela Zari Kolkata"
+  },
+  {
+    "id": 59,
+    "name": "RD Enterprise Mumbai"
+  },
+  {
+    "id": 60,
+    "name": "Rehan Zari Lucknow"
+  },
+  {
+    "id": 61,
+    "name": "Sakeel Khairabad"
+  },
+  {
+    "id": 62,
+    "name": "Salman Barelly"
+  },
+  {
+    "id": 63,
+    "name": "Sandeep Ji Seelampur"
+  },
+  {
+    "id": 64,
+    "name": "Sanjay Aggarwal Kolkata"
+  },
+  {
+    "id": 65,
+    "name": "Sara Jari Store"
+  },
+  {
+    "id": 66,
+    "name": "Sarafarz Bhai Siknadrabad"
+  },
+  {
+    "id": 67,
+    "name": "SG Mumbai Sitara"
+  },
+  {
+    "id": 68,
+    "name": "Shop"
+  },
+  {
+    "id": 69,
+    "name": "Shop Avinash"
+  },
+  {
+    "id": 70,
+    "name": "SK Gonda"
+  },
+  {
+    "id": 71,
+    "name": "Sonu Rampur"
+  },
+  {
+    "id": 72,
+    "name": "Suman Enterprise Ravi"
+  },
+  {
+    "id": 73,
+    "name": "Surajmal Kolkata"
+  },
+  {
+    "id": 74,
+    "name": "Trimurti Enterprise"
+  },
+  {
+    "id": 75,
+    "name": "Unique India"
+  },
+  {
+    "id": 76,
+    "name": "Unsa Zari"
+  },
+  {
+    "id": 77,
+    "name": "Unzila Barelly"
+  },
+  {
+    "id": 78,
+    "name": "Vimal Jain Lucknow"
+  },
+  {
+    "id": 79,
+    "name": "VT Paras Impex"
+  },
+  {
+    "id": 80,
+    "name": "Warsi Barelly"
+  },
+  {
+    "id": 81,
+    "name": "Wasim MGB"
+  },
+  {
+    "id": 82,
+    "name": "Yashi Store"
+  }
+];
 let orders = [];
 let invoices = [];
-let nextOid=1, nextPaId=1, nextInvNum=1, nextInvoiceNum=1;
+let nextOid=1, nextPaId=83, nextInvNum=1, nextInvoiceNum=1;
 // ─────────────────────────────────────────────────────────────────────────
 
 let filt='all', editOid=null, editInvId=null, ovOid=null, pdPartyId=null;
