@@ -1209,7 +1209,6 @@ function doSetup(){
     document.getElementById('setup-err').style.display='none';
     document.getElementById('setup-screen').style.display='none';
     startApp();
-    // Load Firebase data after login
     setTimeout(async function(){
       if(window._firebaseReady && window._firestore){
         setSyncStatus('saving','☁ Loading...');
@@ -1324,7 +1323,7 @@ window.onload = function(){
   document.getElementById('setup-screen').style.display='flex';
   document.getElementById('app').style.display='none';
   setTimeout(()=>{ const el=document.getElementById('setup-adminpw'); if(el)el.focus(); },300);
-  //startApp();
+  // Load from Firebase in background — if empty, save pre-loaded data to cloud
   setTimeout(async function(){
     if(window._firebaseReady && window._firestore){
       try{
@@ -1333,20 +1332,32 @@ window.onload = function(){
         if(snap.exists()){
           const data = snap.data();
           if(data){
-            colors=data.colors||colors; shapes=data.shapes||shapes;
-            orders=data.orders||orders; parties=data.parties||parties;
-            invoices=data.invoices||invoices;
-            nextOid=data.nextOid||nextOid; nextPaId=data.nextPaId||nextPaId;
-            nextInvNum=data.nextInvNum||nextInvNum;
-            nextInvoiceNum=data.nextInvoiceNum||nextInvoiceNum;
-            renderAll();
-            setSyncStatus('saved','☁ Cloud loaded');
-            setTimeout(()=>setSyncStatus('','☁ Cloud'),2000);
+            // Only load from cloud if it has real data
+            if((data.colors&&data.colors.length)||(data.parties&&data.parties.length)||(data.orders&&data.orders.length)){
+              colors=data.colors||colors; shapes=data.shapes||shapes;
+              orders=data.orders||orders; parties=data.parties||parties;
+              invoices=data.invoices||invoices;
+              nextOid=data.nextOid||nextOid; nextPaId=data.nextPaId||nextPaId;
+              nextInvNum=data.nextInvNum||nextInvNum;
+              nextInvoiceNum=data.nextInvoiceNum||nextInvoiceNum;
+              setSyncStatus('saved','☁ Cloud ready');
+              setTimeout(()=>setSyncStatus('','☁ Cloud'),2000);
+            } else {
+              // Cloud has empty data — save our pre-loaded data to cloud
+              saveToBin();
+              setSyncStatus('saved','☁ Data uploaded');
+              setTimeout(()=>setSyncStatus('','☁ Cloud'),2000);
+            }
           }
-        } else { saveToBin(); }
+        } else {
+          // No cloud data at all — save pre-loaded data to Firebase
+          saveToBin();
+          setSyncStatus('saved','☁ Data uploaded to cloud');
+          setTimeout(()=>setSyncStatus('','☁ Cloud'),2000);
+        }
       } catch(e){ console.error(e); }
     }
-  }, 1500);
+  }, 1000);
 };
 
 // ============================================================
