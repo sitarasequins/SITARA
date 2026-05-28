@@ -2643,7 +2643,7 @@ function printPOS(){
     <div class="pos-row bold"><span>WT</span><span>${totalKg.toFixed(2)}</span></div>
     <div class="pos-row bold"><span>AMT</span><span>${Math.round(grand)}</span></div>
     <hr class="pos-divider">
-    ${inv.remarks?`<div style="font-size:18px;margin-top:4px;font-weight:700">Remarks: ${inv.remarks}</div><hr class="pos-divider">`:''}
+    ${inv.remarks?`<div style="font-size:18px;margin-top:4px;font-weight:700">${inv.remarks}</div><hr class="pos-divider">`:''}
     <div style="height:20mm"></div>
   `;
   const posContent=document.getElementById('pos-inv-content').innerHTML;
