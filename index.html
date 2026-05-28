@@ -242,14 +242,14 @@ tr:hover td{background:#fafafa}
   body{background:white}
 }
 /* POS 80mm invoice — large bold font for thermal clarity */
-.pos-inv{width:76mm;margin:0 auto;padding:0 2mm;font-family:'Courier New',monospace;font-size:14px;font-weight:700;color:#000;background:#fff;box-sizing:border-box}
-.pos-inv .pos-title{text-align:center;font-size:22px;font-weight:700;margin-bottom:3px}
-.pos-inv .pos-sub{text-align:center;font-size:13px;font-weight:600;margin-bottom:3px;color:#333}
-.pos-inv .pos-divider{border:none;border-top:2px dashed #000;margin:5px 0}
-.pos-inv .pos-row{display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin:3px 0}
-.pos-inv .pos-row.bold{font-weight:700;font-size:14px}
-.pos-inv .pos-items-hdr{display:flex;font-size:13px;font-weight:700;border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:4px}
-.pos-inv .pos-item-row{display:flex;font-size:14px;font-weight:700;margin:5px 0;align-items:center;white-space:nowrap}
+.pos-inv{width:76mm;margin:0 auto;padding:0 2mm;font-family:'Courier New',monospace;font-size:21px;font-weight:700;color:#000;background:#fff;box-sizing:border-box}
+.pos-inv .pos-title{text-align:center;font-size:26px;font-weight:700;margin-bottom:3px}
+.pos-inv .pos-sub{text-align:center;font-size:19px;font-weight:600;margin-bottom:3px;color:#333}
+.pos-inv .pos-divider{border:none;border-top:2px dashed #000;margin:6px 0}
+.pos-inv .pos-row{display:flex;justify-content:space-between;font-size:21px;font-weight:700;margin:3px 0}
+.pos-inv .pos-row.bold{font-weight:700;font-size:21px}
+.pos-inv .pos-items-hdr{display:flex;font-size:19px;font-weight:700;border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:4px}
+.pos-inv .pos-item-row{display:flex;font-size:21px;font-weight:700;margin:6px 0;align-items:center;white-space:nowrap}
 .pos-inv .pos-col-item{flex:1;padding-right:4px}
 .pos-inv .pos-col-kg{width:52px;text-align:right;flex-shrink:0}
 .pos-inv .pos-col-rate{width:58px;text-align:right;flex-shrink:0}
@@ -264,6 +264,13 @@ tr:hover td{background:#fafafa}
   body.pos-mode .inv{display:none!important}
   body.pos-mode .pos-inv{display:block!important}
   body.pos-mode #setup-screen,body.pos-mode #app>.topbar-app,body.pos-mode #app>.tabs,body.pos-mode #tab-orders,body.pos-mode #tab-invoices,body.pos-mode #tab-catalog,body.pos-mode #tab-production,body.pos-mode .modal-bg,body.pos-mode #admin-btn{display:none!important}
+  /* Remove browser header/footer (date, URL, page number) */
+  @page{
+    margin:0mm;
+    size:80mm auto;
+  }
+  body.pos-mode{margin:0;padding:0}
+  body.pos-mode .pos-inv{margin:0;padding:2mm}
 }
 </style>
 </head>
@@ -2511,7 +2518,8 @@ function printPendingPOS(mode){
       ${rows}
       <hr class="pos-divider">
       <div class="pos-row bold"><span>TOTAL</span><span>${totalNet.toFixed(2)} kg</span></div>
-      <hr class="pos-divider">`;
+      <hr class="pos-divider">
+      <div style="height:20mm"></div>`;
 
   } else {
     // ── Party-wise POS — one section per party ─────────────────
@@ -2553,7 +2561,8 @@ function printPendingPOS(mode){
       <hr class="pos-divider">
       ${partySections}
       <div class="pos-row bold"><span>GRAND TOTAL</span><span>${grandTotal.toFixed(2)} kg</span></div>
-      <hr class="pos-divider">`;
+      <hr class="pos-divider">
+      <div style="height:20mm"></div>`;
   }
 
   document.getElementById('pos-inv-content').innerHTML=posContent;
@@ -2644,17 +2653,20 @@ function printPOS(){
     </div>`;
   }).join('');
   const totalKg=items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+  // Format serial as plain number only e.g. 0001
+  const serialNum=String(inv.serial).padStart(4,'0');
   document.getElementById('pos-inv-content').innerHTML=`
     <div class="pos-title">${inv.party}</div>
     <hr class="pos-divider">
-    <div class="pos-row"><span>${invNumLabel(inv.serial)}</span><span>${inv.date}</span></div>
+    <div class="pos-row"><span>${serialNum}</span><span>${inv.date}</span></div>
     <hr class="pos-divider">
     ${itemRows}
     <hr class="pos-divider">
     <div class="pos-row bold"><span>WT</span><span>${totalKg.toFixed(2)}</span></div>
     <div class="pos-row bold"><span>AMT</span><span>${Math.round(grand)}</span></div>
     <hr class="pos-divider">
-    ${inv.remarks?`<div style="font-size:12px;margin-top:4px;font-weight:600">Remarks: ${inv.remarks}</div><hr class="pos-divider">`:''}
+    ${inv.remarks?`<div style="font-size:18px;margin-top:4px;font-weight:700">Remarks: ${inv.remarks}</div><hr class="pos-divider">`:''}
+    <div style="height:20mm"></div>
   `;
   document.getElementById('pos-inv-wrap').style.display='block';
   document.getElementById('inv-content').closest('.inv-wrap').style.display='none';
