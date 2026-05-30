@@ -1336,6 +1336,13 @@ function startApp(){
 
 window.onload = function(){
   ADMIN_PW = '1';
+  // If URL has ?clear=1, wipe localStorage first
+  if(window.location.search.includes('clear=1')){
+    localStorage.clear();
+    // Remove the ?clear=1 from URL without reload
+    window.history.replaceState({},'',window.location.pathname);
+    alert('✅ Local data cleared! App will start fresh.');
+  }
   loadFromStorage();
   startApp();
   setTimeout(async function(){
