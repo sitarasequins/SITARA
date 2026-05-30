@@ -1229,7 +1229,7 @@ let parties = [
 ];
 let orders = [];
 let invoices = [];
-let nextOid=1, nextPaId=83, nextInvNum=1, nextInvoiceNum=1;
+let nextOid=1, nextPaId=83, nextInvNum=1, nextInvoiceNum=589;
 // ─────────────────────────────────────────────────────────────────────────
 
 let filt='all', editOid=null, editInvId=null, ovOid=null, pdPartyId=null;
@@ -1959,6 +1959,7 @@ function saveInvoice(){
     // Always use max serial + 1 to avoid duplicates
     const maxSerial=invoices.reduce((m,i)=>Math.max(m,i.serial||0),0);
     if(nextInvoiceNum<=maxSerial) nextInvoiceNum=maxSerial+1;
+    if(nextInvoiceNum<589) nextInvoiceNum=589;
     invoices.push({id:Date.now(),serial:nextInvoiceNum++,party,date,items,remarks,orderIds:[]});
   }
   resetInvForm();
@@ -3422,4 +3423,4 @@ function adminResetAll(){
 </script>
 
 
-</bod
+</body></html>
