@@ -3484,8 +3484,7 @@ function shareReportWhatsApp(){
   const pendingOrd=fOrders.filter(o=>o.status==='Pending').length;
   const line='- - - - - - - - - - - - - -';
 
-  let msg='*SITARA SEQUINS REPORT*
-';
+  let msg='*SITARA SEQUINS REPORT*\n';
   msg+=line+'
 ';
   if(from||to) msg+='Period: '+(from||'start')+' to '+(to||'today')+'
@@ -3532,8 +3531,7 @@ function shareReportWhatsApp(){
 ';
     msg+='  Ord:'+d.ordKg.toFixed(2)+' Inv:'+d.invKg.toFixed(2)+' Pend:'+net;
     if(d.invAmt>0) msg+=' Amt:'+Math.round(d.invAmt);
-    msg+='
-';
+    msg+='\n';
   });
 
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
