@@ -1547,6 +1547,7 @@ function renderOrders(){
         <div style="display:flex;gap:5px;flex-shrink:0">
           <button class="btn btn-sm" onclick="loadOrderIntoForm(${o.id})">✏ Edit</button>
           <button class="btn btn-sm" onclick="printOrderPOS(${o.id})" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🧾</button>
+          <button class="btn btn-sm" onclick="shareOrderWhatsApp(${o.id})" style="background:#25D366;color:#fff;border-color:#25D366">💬</button>
           <button class="btn btn-sm btn-danger" onclick="delOrder(${o.id})">🗑</button>
         </div>
       </div>`;
@@ -1996,6 +1997,7 @@ function renderInvoiceList(){
       <td><div style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="btn btn-sm" onclick="loadInvIntoForm(${inv.id})">Edit</button>
         <button class="btn btn-sm btn-primary" onclick="viewInvoice(${inv.id})">Print</button>
+        <button class="btn btn-sm" onclick="shareInvWhatsApp(${inv.id})" style="background:#25D366;color:#fff;border-color:#25D366">💬</button>
         <button class="btn btn-sm btn-danger" onclick="delInvoice(${inv.id})">Delete</button>
       </div></td>
     </tr>`;
@@ -3304,6 +3306,32 @@ function exportReportXLS(){
 // ============================================================
 // WHATSAPP SHARE
 // ============================================================
+function shareInvWhatsApp(invId){
+  const inv=invoices.find(x=>x.id===invId);
+  if(!inv)return;
+  const items=inv.items||[];
+  const totalKg=items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+  const totalAmt=items.reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);
+  const serialNum=String(inv.serial).padStart(4,'0');
+  const line='- - - - - - - - - - - - - -';
+  let msg=inv.party+'\n';
+  msg+=line+'\n';
+  msg+=serialNum+'     '+inv.date.slice(5)+'\n';
+  msg+=line+'\n';
+  items.forEach(i=>{
+    const kg=parseFloat(i.kg).toFixed(2);
+    const rate=i.price>0?'  '+Math.round(i.price):'';
+    const amt=i.price>0?'  '+Math.round(parseFloat(i.kg||0)*parseFloat(i.price||0)):'';
+    msg+=i.color+' '+i.shape+'  '+kg+rate+amt+'\n';
+  });
+  msg+=line+'\n';
+  msg+='WT     '+totalKg.toFixed(2)+'\n';
+  if(totalAmt>0) msg+='AMT    '+Math.round(totalAmt)+'\n';
+  msg+=line+'\n';
+  if(inv.remarks) msg+=inv.remarks+'\n';
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
 function shareInvoiceWhatsApp(){
   if(!currentPosInvId) return;
   const inv = invoices.find(x=>x.id===currentPosInvId);
