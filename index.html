@@ -365,7 +365,13 @@ tr:hover td{background:#fafafa}
       <div class="form-panel">
         <h4 id="inv-form-title">New Invoice</h4>
         <div class="field"><label>Party name</label>
-          <select id="if-party" style="width:100%;font-size:13px;padding:7px 10px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#1a1a1a;outline:none"><option value="dipiya store">dipiya store</option><option value="Rahul gonda">Rahul gonda</option><option value="Bhagat Moti">Bhagat Moti</option><option value="A to Z">A to Z</option><option value="AJAJ">AJAJ</option><option value="Sitara Shop(Avinash)">Sitara Shop(Avinash)</option><option value="Nawaj Button">Nawaj Button</option><option value="Mudir">Mudir</option></select>
+          <div class="combo-wrap" style="width:100%">
+            <input class="combo-input" id="if-party-input" type="text" placeholder="Type or pick party..." autocomplete="off"
+              onfocus="openPartyCombo(this)"
+              oninput="openPartyCombo(this)"
+              onkeydown="comboKeyDown(event,'inv-party-drop','party-combo')">
+            <div class="combo-drop" id="inv-party-drop"></div>
+          </div>
         </div>
         <div class="field"><label>Invoice date</label><input id="if-date" type="date"></div>
         <div style="margin-top:4px">
@@ -374,7 +380,10 @@ tr:hover td{background:#fafafa}
           <div id="inv-items-container"></div>
           <button class="add-item-btn" onclick="addInvItemRow()">+ Add item</button>
         </div>
-        <div class="field" style="margin-top:10px">
+        <div style="margin-top:10px;margin-bottom:6px;padding:8px 12px;background:#f0f4ff;border-radius:8px;font-size:13px;font-weight:600;color:#1e3a5f">
+          Total Weight: <span id="inv-form-weight" style="color:#2563eb">0.00 kg</span>
+        </div>
+        <div class="field" style="margin-top:6px">
           <label>Remarks <span style="font-size:11px;color:#aaa">(optional — printed at bottom)</span></label>
           <textarea id="if-remarks" placeholder="e.g. Payment received, Delivery by courier, Special instructions..."
             style="width:100%;padding:8px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:13px;outline:none;resize:vertical;min-height:60px;box-sizing:border-box;font-family:inherit"></textarea>
@@ -393,7 +402,12 @@ tr:hover td{background:#fafafa}
             <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="si-total">1</div></div>
             <div class="stat"><div class="stat-label">Amount</div><div class="stat-val" id="si-amount" style="font-size:15px">₹1,250</div></div>
           </div>
-          <button class="btn btn-sm" onclick="exportTallyXML()" style="background:#7c3aed;color:#fff;border-color:#7c3aed">📤 Export Tally XML</button>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <input type="date" id="inv-date-filter" onchange="renderInvoiceList()"
+              style="padding:5px 9px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
+            <button class="btn btn-sm" onclick="document.getElementById('inv-date-filter').value='';renderInvoiceList()" style="font-size:11px">All</button>
+            <button class="btn btn-sm" onclick="exportTallyXML()" style="background:#7c3aed;color:#fff;border-color:#7c3aed">📤 Export Tally XML</button>
+          </div>
         </div>
         <table>
           <thead><tr>
@@ -1997,17 +2011,47 @@ function getInvItems(){
     return{color:(combos[0]?.value||'').trim(),shape:(combos[1]?.value||'').trim(),kg:parseFloat(ins[0]?.value)||0,price:parseFloat(ins[1]?.value)||0};
   }).filter(i=>i.color&&i.shape);
 }
+function openPartyCombo(inp){
+  const uid='inv-party-drop';
+  closeAllCombos();
+  const drop=document.getElementById(uid);
+  if(!drop)return;
+  const rect=inp.getBoundingClientRect();
+  drop.style.top=(rect.bottom+2)+'px';
+  drop.style.left=rect.left+'px';
+  drop.style.width=Math.max(rect.width,200)+'px';
+  drop._activeIdx=-1;
+  drop._cls='party-combo';
+  const q=inp.value.toLowerCase();
+  const filtered=parties.filter(p=>p.name.toLowerCase().includes(q)).map(p=>({value:p.name,label:p.name}));
+  if(!filtered.length){drop.classList.remove('open');return;}
+  drop._data=filtered;
+  drop.innerHTML=filtered.map((p,i)=>`<div class="combo-opt" data-idx="${i}" onmousedown="pickPartyCombo(${i},event)">${p.label}</div>`).join('');
+  drop.classList.add('open');
+}
+function pickPartyCombo(idx,e){
+  e.preventDefault();
+  const drop=document.getElementById('inv-party-drop');
+  const val=drop._data?drop._data[idx].value:'';
+  const inp=document.getElementById('if-party-input');
+  if(inp)inp.value=val;
+  drop.classList.remove('open');
+}
+
 function updateInvFormTotal(){
-  const t=getInvItems().reduce((s,i)=>s+(i.kg*i.price),0);
+  const items=getInvItems();
+  const t=items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFloat(i.price||0)),0);
+  const w=items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
   document.getElementById('inv-form-total').textContent=fmt(t);
+  const wEl=document.getElementById('inv-form-weight');
+  if(wEl)wEl.textContent=w.toFixed(2)+' kg';
 }
 function resetInvForm(){
   editInvId=null;
   document.getElementById('inv-form-title').textContent='New Invoice';
   document.getElementById('save-inv-btn').textContent='Save invoice';
-  const sel=document.getElementById('if-party');
-  sel.innerHTML=parties.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
-  sel.disabled=false;
+  const pInput=document.getElementById('if-party-input');
+  if(pInput){pInput.value=parties.length?parties[0].name:'';pInput.disabled=false;}
   document.getElementById('if-date').value=today();
   document.getElementById('inv-items-container').innerHTML='';
   const rem=document.getElementById('if-remarks');
@@ -2020,9 +2064,8 @@ function loadInvIntoForm(invId){
   editInvId=invId;
   document.getElementById('inv-form-title').textContent='Edit Invoice — '+invNumLabel(inv.serial);
   document.getElementById('save-inv-btn').textContent='Update invoice';
-  const sel=document.getElementById('if-party');
-  sel.innerHTML=`<option value="${inv.party}">${inv.party}</option>`;
-  sel.disabled=true;
+  const pInput=document.getElementById('if-party-input');
+  if(pInput){pInput.value=inv.party;pInput.disabled=false;}
   document.getElementById('if-date').value=inv.date;
   const remEl=document.getElementById('if-remarks');
   if(remEl)remEl.value=inv.remarks||'';
@@ -2033,7 +2076,8 @@ function loadInvIntoForm(invId){
   document.getElementById('inv-form-title').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function saveInvoice(){
-  const party=document.getElementById('if-party').value;
+  const pInput=document.getElementById('if-party-input');
+  const party=(pInput?pInput.value:'').trim();
   const date=document.getElementById('if-date').value;
   const items=getInvItems();
   const remarks=(document.getElementById('if-remarks').value||'').trim();
@@ -2063,7 +2107,9 @@ function renderInvoiceList(){
     document.getElementById('si-total').textContent=0;
     document.getElementById('si-amount').textContent='₹0';return;}
   empty.style.display='none';
-  const sorted=[...invoices].sort((a,b)=>a.serial-b.serial);
+  const invDateFilter=(document.getElementById('inv-date-filter')||{value:''}).value;
+  let filtInvoices=invDateFilter?invoices.filter(i=>i.date===invDateFilter):invoices;
+  const sorted=[...filtInvoices].sort((a,b)=>a.serial-b.serial);
   let grand=0;
   tbody.innerHTML=sorted.map((inv,idx)=>{
     const amt=(inv.items||[]).reduce((s,i)=>s+(i.kg*i.price),0);
@@ -2082,10 +2128,10 @@ function renderInvoiceList(){
       </div></td>
     </tr>`;
   }).join('');
-  document.getElementById('si-total').textContent=invoices.length;
+  document.getElementById('si-total').textContent=filtInvoices.length;
   document.getElementById('si-amount').textContent=fmt(grand);
-  const sel=document.getElementById('if-party');
-  if(sel&&!editInvId) sel.innerHTML=parties.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  const partyInput=document.getElementById('if-party-input');
+  if(partyInput&&!editInvId) partyInput.value=parties.length?parties[0].name:'';
 }
 
 // ============================================================
