@@ -3485,34 +3485,20 @@ function shareReportWhatsApp(){
   const line='- - - - - - - - - - - - - -';
 
   let msg='*SITARA SEQUINS REPORT*\n';
-  msg+=line+'
-';
-  if(from||to) msg+='Period: '+(from||'start')+' to '+(to||'today')+'
-';
-  if(selP) msg+='Party: '+selP+'
-';
-  if(selC) msg+='Color: '+selC+'
-';
-  if(selS) msg+='Shape: '+selS+'
-';
-  msg+=line+'
-';
-  msg+='Orders:      '+fOrders.length+'
-';
-  msg+='Pending:     '+pendingOrd+'
-';
-  msg+='Ordered kg:  '+totalOrdKg.toFixed(2)+'
-';
-  msg+='Invoices:    '+fInvoices.length+'
-';
-  msg+='Invoiced kg: '+totalInvKg.toFixed(2)+'
-';
-  msg+='Pending kg:  '+(totalOrdKg-totalInvKg).toFixed(2)+'
-';
-  if(totalInvAmt>0) msg+='Inv Amount:  '+Math.round(totalInvAmt)+'
-';
-  msg+=line+'
-';
+  msg+=line+'\n';
+  if(from||to) msg+='Period: '+(from||'start')+' to '+(to||'today')+'\n';
+  if(selP) msg+='Party: '+selP+'\n';
+  if(selC) msg+='Color: '+selC+'\n';
+  if(selS) msg+='Shape: '+selS+'\n';
+  msg+=line+'\n';
+  msg+='Orders:      '+fOrders.length+'\n';
+  msg+='Pending:     '+pendingOrd+'\n';
+  msg+='Ordered kg:  '+totalOrdKg.toFixed(2)+'\n';
+  msg+='Invoices:    '+fInvoices.length+'\n';
+  msg+='Invoiced kg: '+totalInvKg.toFixed(2)+'\n';
+  msg+='Pending kg:  '+(totalOrdKg-totalInvKg).toFixed(2)+'\n';
+  if(totalInvAmt>0) msg+='Inv Amount:  '+Math.round(totalInvAmt)+'\n';
+  msg+=line+'\n';
 
   // Add party summary
   const pm={};
@@ -3527,8 +3513,7 @@ function shareReportWhatsApp(){
   });
   Object.entries(pm).sort((a,b)=>b[1].ordKg-a[1].ordKg).forEach(([p,d])=>{
     const net=(d.ordKg-d.invKg).toFixed(2);
-    msg+=p+'
-';
+    msg+=p+'\n';
     msg+='  Ord:'+d.ordKg.toFixed(2)+' Inv:'+d.invKg.toFixed(2)+' Pend:'+net;
     if(d.invAmt>0) msg+=' Amt:'+Math.round(d.invAmt);
     msg+='\n';
@@ -3573,14 +3558,9 @@ function sharePendingWhatsApp(mode){
       return net>0.001?{color:v.color,shape:v.shape,net}:null;
     }).filter(Boolean).sort(numSort);
     const totalNet=items.reduce((s,i)=>s+i.net,0);
-    msg='*Item Pending*  '+today().slice(5)+'
-'+line+'
-';
-    items.forEach(i=>{ msg+=i.color+' '+i.shape+'  '+i.net.toFixed(2)+'
-'; });
-    msg+=line+'
-TOTAL  '+totalNet.toFixed(2)+'
-';
+    msg='*Item Pending*  '+today().slice(5)+'\n'+line+'\n';
+    items.forEach(i=>{ msg+=i.color+' '+i.shape+'  '+i.net.toFixed(2)+'\n'; });
+    msg+=line+'\nTOTAL  '+totalNet.toFixed(2)+'\n';
   } else {
     const partyMap={};
     orders.filter(o=>o.status==='Pending').forEach(o=>{
@@ -3592,8 +3572,7 @@ TOTAL  '+totalNet.toFixed(2)+'
       });
     });
     let grandTotal=0;
-    msg='*Party Pending*  '+today().slice(5)+'
-';
+    msg='*Party Pending*  '+today().slice(5)+'\n';
     Object.entries(partyMap).forEach(([party,itemMap])=>{
       const pi=invByPartyItem[party]||{};
       const netItems=Object.values(itemMap).map(it=>{
@@ -3603,15 +3582,10 @@ TOTAL  '+totalNet.toFixed(2)+'
       if(!netItems.length)return;
       const partyTotal=netItems.reduce((s,i)=>s+i.net,0);
       grandTotal+=partyTotal;
-      msg+=line+'
-*'+party+'*  '+partyTotal.toFixed(2)+'
-';
-      netItems.forEach(i=>{ msg+=i.color+' '+i.shape+'  '+i.net.toFixed(2)+'
-'; });
+      msg+=line+'\n*'+party+'*  '+partyTotal.toFixed(2)+'\n';
+      netItems.forEach(i=>{ msg+=i.color+' '+i.shape+'  '+i.net.toFixed(2)+'\n'; });
     });
-    msg+=line+'
-GRAND TOTAL  '+grandTotal.toFixed(2)+'
-';
+    msg+=line+'\nGRAND TOTAL  '+grandTotal.toFixed(2)+'\n';
   }
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
