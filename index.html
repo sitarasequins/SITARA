@@ -2577,7 +2577,17 @@ function printPendingPOS(mode){
 // ── Print individual order as POS receipt ──
 function printOrderPOS(id){
   const o=orders.find(x=>x.id===id);if(!o)return;
-  const sortedItems=[...o.items].sort((a,b)=>(a.color+a.shape).localeCompare(b.color+b.shape, undefined, {numeric:true, sensitivity:'base'}));
+  // Extract number from string for proper numeric sort e.g. DD1→1, DD10→10, DD12→12
+  function extractNum(s){ const m=s.match(/\d+/); return m?parseInt(m[0]):0; }
+  function extractPrefix(s){ return s.replace(/\d+.*$/,''); }
+  const sortedItems=[...o.items].sort((a,b)=>{
+    const pa=extractPrefix(a.color), pb=extractPrefix(b.color);
+    if(pa!==pb) return pa.localeCompare(pb);
+    const na=extractNum(a.color), nb=extractNum(b.color);
+    if(na!==nb) return na-nb;
+    const sa=extractNum(a.shape), sb=extractNum(b.shape);
+    return sa-sb;
+  });
   const rows=sortedItems.map(i=>`<div class="pos-item-row">
     <div class="pos-col-item">${i.color} ${i.shape}</div>
     <div class="pos-col-kg">${parseFloat(i.kg).toFixed(2)}</div>
