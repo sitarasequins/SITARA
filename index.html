@@ -117,7 +117,7 @@ tr:hover td{background:#fafafa}
 .field input,.field select{width:100%;font-size:13px;padding:7px 10px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#1a1a1a;outline:none;transition:border .15s}
 .field input:focus,.field select:focus{border-color:#2563eb}
 /* Item rows */
-.item-hdr{display:grid;grid-template-columns:1fr 1fr 62px 62px 24px;gap:5px;margin-bottom:4px}
+.item-hdr{display:grid;grid-template-columns:1fr 1fr 58px 58px 60px 24px;gap:5px;margin-bottom:4px}
 .item-hdr span{font-size:11px;color:#999;font-weight:500}
 .item-row{display:grid;grid-template-columns:1fr 1fr 62px 62px 24px;gap:5px;margin-bottom:6px;align-items:center}
 .item-row select,.item-row input{font-size:12px;padding:5px 7px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#1a1a1a;width:100%}
@@ -330,7 +330,7 @@ tr:hover td{background:#fafafa}
         <div class="field"><label>Order date</label><input id="f-date" type="date"></div>
         <div style="margin-top:4px">
           <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:500">Items</div>
-          <div class="item-hdr"><span>Color</span><span>Shape</span><span>Kg</span><span></span></div>
+          <div class="item-hdr"><span>Color</span><span>Shape</span><span>Kg</span><span>Rate</span><span>Amt</span><span></span></div>
           <div id="items-container"></div>
           <button class="add-item-btn" onclick="addItemRow()">+ Add item</button>
         </div>
@@ -1736,7 +1736,6 @@ function shapeOptions(sel){return shapes.map(s=>`<option value="${s}" ${s===sel?
 
 function makeCombo(list, val, cls){
   const uid='cb'+Math.random().toString(36).slice(2,7);
-  // For color combos build {label, value} list including aliases
   let comboList;
   if(cls==='color-combo'){
     comboList=colors.map(c=>({value:colorName(c),label:colorAlias(c)?colorName(c)+' ('+colorAlias(c)+')':colorName(c)}));
@@ -1746,31 +1745,95 @@ function makeCombo(list, val, cls){
   const listJson=JSON.stringify(comboList).replace(/"/g,'&quot;');
   return `<div class="combo-wrap">
     <input class="combo-input ${cls}" type="text" value="${val||''}" placeholder="Type or pick..." autocomplete="off"
-      onfocus="openComboObj(this,'${uid}',${listJson})"
-      oninput="filterComboObj(this,'${uid}',${listJson})">
+      onfocus="openComboObj(this,'${uid}',${listJson},'${cls}')"
+      oninput="filterComboObj(this,'${uid}',${listJson},'${cls}')"
+      onkeydown="comboKeyDown(event,'${uid}','${cls}')">
     <div class="combo-drop" id="${uid}"></div>
   </div>`;
 }
-function openComboObj(inp,uid,list){
+function openComboObj(inp,uid,list,cls){
   closeAllCombos();
   const drop=document.getElementById(uid);
   const rect=inp.getBoundingClientRect();
   drop.style.top=(rect.bottom+2)+'px';
   drop.style.left=rect.left+'px';
-  drop.style.width=Math.max(rect.width,130)+'px';
-  filterComboObj(inp,uid,list,true);
+  drop.style.width=Math.max(rect.width,160)+'px';
+  drop._activeIdx=-1;
+  filterComboObj(inp,uid,list,cls,true);
 }
-function filterComboObj(inp,uid,list,forceOpen){
+function filterComboObj(inp,uid,list,cls,forceOpen){
   const q=inp.value.toLowerCase();
   const drop=document.getElementById(uid);
-  const filtered=list.filter(x=>x.label.toLowerCase().includes(q)||x.value.toLowerCase().includes(q)).slice(0,2);
-  if(!filtered.length){drop.classList.remove('open');return;}
-  drop.innerHTML=filtered.map((x,i)=>{
-    const safe=x.label.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-    return `<div class="combo-opt" data-uid="${uid}" onmousedown="pickComboObjIdx('${uid}',${i},event)">${safe}</div>`;
-  }).join('');
+  const filtered=list.filter(x=>x.label.toLowerCase().includes(q)||x.value.toLowerCase().includes(q)).slice(0,8);
   drop._data=filtered;
+  drop._activeIdx=-1;
+  drop._cls=cls||'';
+
+  let html2='';
+  if(filtered.length){
+    html2+=filtered.map((x,i)=>{
+      const safe=x.label.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      return `<div class="combo-opt" data-idx="${i}" onmousedown="pickComboObjIdx('${uid}',${i},event)">${safe}</div>`;
+    }).join('');
+  }
+  // Add "Create new" option if typed something not in list
+  const exactMatch=list.some(x=>x.value.toLowerCase()===q||x.label.toLowerCase()===q);
+  if(q && !exactMatch){
+    const createLabel=cls==='color-combo'?'+ Add color "'+inp.value+'"':'+ Add shape "'+inp.value+'"';
+    html2+=`<div class="combo-opt" style="color:#2563eb;font-style:italic;border-top:1px dashed #ddd" data-idx="${filtered.length}" onmousedown="createAndPickCombo('${uid}',event)">${createLabel}</div>`;
+  }
+  if(!html2){drop.classList.remove('open');return;}
+  drop.innerHTML=html2;
   drop.classList.add('open');
+}
+function comboKeyDown(e,uid,cls){
+  const drop=document.getElementById(uid);
+  if(!drop||!drop.classList.contains('open'))return;
+  const opts=drop.querySelectorAll('.combo-opt');
+  if(!opts.length)return;
+  let idx=drop._activeIdx||0;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    idx=Math.min(idx+1,opts.length-1);
+    drop._activeIdx=idx;
+    opts.forEach((o,i)=>o.style.background=i===idx?'#eff6ff':'');
+    opts[idx].scrollIntoView({block:'nearest'});
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    idx=Math.max(idx-1,0);
+    drop._activeIdx=idx;
+    opts.forEach((o,i)=>o.style.background=i===idx?'#eff6ff':'');
+    opts[idx].scrollIntoView({block:'nearest'});
+  } else if(e.key==='Enter'||e.key==='Tab'){
+    if(idx>=0&&idx<opts.length){
+      e.preventDefault();
+      opts[idx].dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));
+    }
+  } else if(e.key==='Escape'){
+    drop.classList.remove('open');
+  }
+}
+function createAndPickCombo(uid,e){
+  e.preventDefault();
+  const drop=document.getElementById(uid);
+  const inp=drop.closest('.combo-wrap').querySelector('.combo-input');
+  const val=inp.value.trim();
+  if(!val)return;
+  const cls=drop._cls||'';
+  if(cls==='color-combo'){
+    if(!colors.some(c=>colorName(c).toLowerCase()===val.toLowerCase())){
+      colors.push(val);
+      saveAll();
+    }
+  } else {
+    if(!shapes.some(s=>s.toLowerCase()===val.toLowerCase())){
+      shapes.push(val);
+      saveAll();
+    }
+  }
+  inp.value=val;
+  drop.classList.remove('open');
+  if(drop.closest('#inv-items-container'))updateInvFormTotal();
 }
 function pickComboObjIdx(uid,idx,e){
   e.preventDefault();
@@ -1833,13 +1896,25 @@ function closeCombo(uid){
   if(el) el.classList.remove('open');
 }
 
+function calcOrderRowAmt(input){
+  const row=input.closest('.item-row');if(!row)return;
+  const kg=parseFloat(row.querySelector('input[placeholder="kg"]').value)||0;
+  const rate=parseFloat(row.querySelector('input[placeholder="rate"]').value)||0;
+  const amtEl=row.querySelector('.order-amt');
+  if(amtEl)amtEl.textContent=rate>0?Math.round(kg*rate):'';
+}
 function addItemRow(item=null){
   const c=document.getElementById('items-container');
   const d=document.createElement('div');d.className='item-row';
-  const selC=item?item.color:(colors[0]||'');
-  const selS=item?item.shape:(shapes[0]||'');
+  const selC=item?item.color:(colors.length?colorName(colors[0]):'');
+  const selS=item?item.shape:(shapes.length?shapes[0]:'');
+  const kg=item?item.kg:1;
+  const price=item?(item.price||0):0;
+  const amt=price>0?Math.round(kg*price):'';
   d.innerHTML=makeCombo(colors,selC,'color-combo')+makeCombo(shapes,selS,'shape-combo')+
-    `<input type="number" min="0" step="0.01" value="${item?item.kg:1}" placeholder="kg">
+    `<input type="number" min="0" step="0.01" value="${kg}" placeholder="kg" oninput="calcOrderRowAmt(this)">
+    <input type="number" min="0" value="${price||''}" placeholder="rate" oninput="calcOrderRowAmt(this)">
+    <span class="order-amt" style="font-size:12px;color:#2563eb;font-weight:600;text-align:right;padding:4px 2px">${amt}</span>
     <button class="item-del" onclick="this.parentElement.remove()">✕</button>`;
   c.appendChild(d);
 }
@@ -1847,7 +1922,8 @@ function getItems(){
   return [...document.querySelectorAll('#items-container .item-row')].map(r=>{
     const combos=r.querySelectorAll('.combo-input');
     const ins=r.querySelectorAll('input[type="number"]');
-    return{color:(combos[0]?.value||'').trim(),shape:(combos[1]?.value||'').trim(),kg:parseFloat(ins[0]?.value)||0,price:0};
+    return{color:(combos[0]?.value||'').trim(),shape:(combos[1]?.value||'').trim(),
+      kg:parseFloat(ins[0]?.value)||0,price:parseFloat(ins[1]?.value)||0};
   }).filter(i=>i.color&&i.shape);
 }
 function resetOrderForm(){
