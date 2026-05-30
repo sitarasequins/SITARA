@@ -1245,42 +1245,7 @@ function showReconnect(){}
 const APP_PW = '1';
 
 function doSetup(){
-  // No password needed - open directly
   startApp();
-  /*dosetup_nopass*/
-    setTimeout(async function(){
-      if(window._firebaseReady && window._firestore){
-        setSyncStatus('saving','☁ Loading...');
-        try{
-          const {getDoc, DATA_DOC} = window._firestore;
-          const snap = await getDoc(DATA_DOC);
-          if(snap.exists()){
-            const data = snap.data();
-            if(data){
-              colors       = data.colors       || colors;
-              shapes       = data.shapes       || shapes;
-              orders       = data.orders       || orders;
-              parties      = data.parties      || parties;
-              invoices     = data.invoices     || invoices;
-              nextOid      = data.nextOid      || nextOid;
-              nextPaId     = data.nextPaId     || nextPaId;
-              nextInvNum   = data.nextInvNum   || nextInvNum;
-              nextInvoiceNum = data.nextInvoiceNum || nextInvoiceNum;
-              renderAll();
-              setSyncStatus('saved','☁ Cloud loaded');
-              setTimeout(()=>setSyncStatus('','☁ Cloud'), 2000);
-            }
-          } else {
-            saveToBin();
-          }
-        } catch(e){ console.error(e); }
-      }
-    }, 500);
-  } else {
-    document.getElementById('setup-err').style.display='block';
-    document.getElementById('setup-adminpw').value='';
-    document.getElementById('setup-adminpw').focus();
-  }
 }
 
 // ============================================================
@@ -1362,7 +1327,8 @@ function saveAll(){
 // APP START
 // ============================================================
 function startApp(){
-  document.getElementById('setup-screen').style.display='none';
+  const ss=document.getElementById('setup-screen');
+  if(ss) ss.style.display='none';
   document.getElementById('app').style.display='block';
   renderAll();
   setTimeout(()=>{ resetOrderForm(); resetInvForm(); }, 100);
