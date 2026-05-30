@@ -732,6 +732,7 @@ tr:hover td{background:#fafafa}
       <button class="btn" onclick="closeInvoice()">← Back</button>
       <button class="btn btn-primary" onclick="window.print()">🖨 Print A4</button>
       <button class="btn" onclick="printPOS()" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🧾 POS 80mm</button>
+      <button class="btn" onclick="shareInvoiceWhatsApp()" style="background:#25D366;color:#fff;border-color:#25D366">💬 WhatsApp</button>
     </div>
     <div class="inv-wrap"><div class="inv" id="inv-content"></div></div>
     <div class="inv-wrap" style="display:none" id="pos-inv-wrap"><div class="pos-inv" id="pos-inv-content"></div></div>
@@ -1877,11 +1878,15 @@ function saveOrder(){
   if(editOid){
     const i=orders.findIndex(x=>x.id===editOid);
     orders[i]={...orders[i],party,date:dateVal,items};
+    resetOrderForm();
+    saveAll();renderOrders();renderInvoiceList();
   } else {
-    orders.push({id:nextOid++,invNum:nextInvNum++,party,date:dateVal,status:'Pending',items});
+    const newOrder={id:nextOid++,invNum:nextInvNum++,party,date:dateVal,status:'Pending',items};
+    orders.push(newOrder);
+    resetOrderForm();
+    saveAll();renderOrders();renderInvoiceList();
+    showOrderWhatsApp(newOrder.id);
   }
-  resetOrderForm();
-  saveAll();renderOrders();renderInvoiceList();
 }
 function markDone(id){const o=orders.find(x=>x.id===id);if(o){o.status='Delivered';saveAll();renderOrders();renderProduction();}}
 function delOrder(id){
@@ -3295,6 +3300,84 @@ function exportReportXLS(){
 
   XLSX.writeFile(wb,'Sitara_Report_'+today()+'.xlsx');
 }
+
+// ============================================================
+// WHATSAPP SHARE
+// ============================================================
+function shareInvoiceWhatsApp(){
+  if(!currentPosInvId) return;
+  const inv = invoices.find(x=>x.id===currentPosInvId);
+  if(!inv) return;
+  const items = inv.items||[];
+  const totalKg = items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+  const totalAmt = items.reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);
+  const serialNum = String(inv.serial).padStart(4,'0');
+  const line = '- - - - - - - - - - - - - -';
+  let msg = inv.party+'\n';
+  msg += line+'\n';
+  msg += serialNum+'     '+inv.date.slice(5)+'\n';
+  msg += line+'\n';
+  items.forEach(i=>{
+    const kg=parseFloat(i.kg).toFixed(2);
+    const rate=i.price>0?'  '+Math.round(i.price):'';
+    const amt=i.price>0?'  '+Math.round(parseFloat(i.kg||0)*parseFloat(i.price||0)):'';
+    msg += i.color+' '+i.shape+'  '+kg+rate+amt+'\n';
+  });
+  msg += line+'\n';
+  msg += 'WT     '+totalKg.toFixed(2)+'\n';
+  if(totalAmt>0) msg += 'AMT    '+Math.round(totalAmt)+'\n';
+  msg += line+'\n';
+  if(inv.remarks) msg += inv.remarks+'\n';
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+function showOrderWhatsApp(orderId){
+  const o = orders.find(x=>x.id===orderId);
+  if(!o) return;
+  // Show a small toast with WhatsApp share option
+  const existing = document.getElementById('wa-toast');
+  if(existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'wa-toast';
+  toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:12px;z-index:9999;display:flex;gap:12px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,.3);font-size:13px';
+  toast.innerHTML = `<span>Order saved!</span>
+    <button onclick="shareOrderWhatsApp(${o.id})" style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer">💬 Share on WhatsApp</button>
+    <button onclick="document.getElementById('wa-toast').remove()" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:0 4px">✕</button>`;
+  document.body.appendChild(toast);
+  // Auto remove after 8 seconds
+  setTimeout(()=>{ const t=document.getElementById('wa-toast'); if(t)t.remove(); }, 8000);
+}
+
+function shareOrderWhatsApp(orderId){
+  const o = orders.find(x=>x.id===orderId);
+  if(!o) return;
+  const totalKg = o.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+  const serialNum = String(o.invNum).padStart(4,'0');
+  function extractNum(s){ const m=s.match(/\d+/); return m?parseInt(m[0]):0; }
+  function extractPrefix(s){ return s.replace(/\d+.*$/,''); }
+  const sortedItems=[...o.items].sort((a,b)=>{
+    const pa=extractPrefix(a.color), pb=extractPrefix(b.color);
+    if(pa!==pb) return pa.localeCompare(pb);
+    const na=extractNum(a.color), nb=extractNum(b.color);
+    if(na!==nb) return na-nb;
+    return extractNum(a.shape)-extractNum(b.shape);
+  });
+  const line = '- - - - - - - - - - - - - -';
+  let msg = o.party+'\n';
+  msg += line+'\n';
+  msg += serialNum+'     '+o.date.slice(5)+'\n';
+  msg += line+'\n';
+  sortedItems.forEach(i=>{
+    msg += i.color+' '+i.shape+'  '+parseFloat(i.kg).toFixed(2)+'\n';
+  });
+  msg += line+'\n';
+  msg += 'WT     '+totalKg.toFixed(2)+'\n';
+  msg += line+'\n';
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  const t=document.getElementById('wa-toast'); if(t)t.remove();
+}
+
 
 // ============================================================
 // INVOICE RECOVERY
