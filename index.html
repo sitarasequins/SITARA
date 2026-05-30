@@ -539,6 +539,8 @@ tr:hover td{background:#fafafa}
         <button class="btn btn-sm" onclick="exportPendingXLS()" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8">📊 Export XLS</button>
         <button class="btn btn-sm" onclick="printPendingPOS('item')" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🧾 Item POS</button>
         <button class="btn btn-sm" onclick="printPendingPOS('party')" style="background:#374151;color:#fff;border-color:#374151">🧾 Party POS</button>
+        <button class="btn btn-sm" onclick="sharePendingWhatsApp('item')" style="background:#25D366;color:#fff;border-color:#25D366">💬 Item WA</button>
+        <button class="btn btn-sm" onclick="sharePendingWhatsApp('party')" style="background:#128C7E;color:#fff;border-color:#128C7E">💬 Party WA</button>
         <!-- Search -->
         <input id="prod-search" type="text" placeholder="🔍 Search item / party…"
           oninput="renderProduction()"
@@ -864,6 +866,8 @@ tr:hover td{background:#fafafa}
 
         <button class="btn btn-sm" onclick="clearRptFilter()" style="font-size:12px">✕ Clear</button>
         <button class="btn btn-sm" onclick="exportReportXLS()" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;font-size:12px">📊 Export XLS</button>
+        <button class="btn btn-sm" onclick="printReport()" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a;font-size:12px">🖨 Print</button>
+        <button class="btn btn-sm" onclick="shareReportWhatsApp()" style="background:#25D366;color:#fff;border-color:#25D366;font-size:12px">💬 WhatsApp</button>
       </div>
     </div>
 
@@ -3404,6 +3408,178 @@ function shareOrderWhatsApp(orderId){
   msg += line+'\n';
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
   const t=document.getElementById('wa-toast'); if(t)t.remove();
+}
+
+
+// ============================================================
+// REPORT PRINT & WHATSAPP
+// ============================================================
+function printReport(){
+  const content = document.getElementById('rpt-content').innerHTML;
+  const stats = document.getElementById('rpt-stats').innerHTML;
+  const win = window.open('','_blank','width=900,height=700,toolbar=1,menubar=1');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+      body{font-family:Arial,sans-serif;font-size:12px;padding:16px;color:#000}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th{text-align:left;padding:7px 10px;background:#f0f4ff;border-bottom:2px solid #dbeafe;font-size:11px;color:#2563eb;text-transform:uppercase}
+      td{padding:7px 10px;border-bottom:1px solid #f0f0f0}
+      .stat{display:inline-block;background:#f8f9fa;border-radius:6px;padding:6px 12px;margin:3px;font-size:12px}
+      .stat-label{font-size:10px;color:#888}
+      .stat-val{font-size:15px;font-weight:700}
+      .rpt-card{margin-bottom:14px}
+      .rpt-card-hdr{background:#f0f4ff;padding:8px 12px;font-weight:700;font-size:13px;border-bottom:1px solid #dbeafe}
+      @media print{@page{margin:10mm}}
+    </style>
+  </head><body>
+    <div style="margin-bottom:12px">${stats}</div>
+    ${content}
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(), 600);
+}
+
+function shareReportWhatsApp(){
+  const {fOrders,fInvoices,selP,selC,selS,from,to}=rptFilterData();
+  const totalOrdKg=fOrders.reduce((s,o)=>s+o.items.reduce((ss,i)=>ss+parseFloat(i.kg||0),0),0);
+  const totalInvKg=fInvoices.reduce((s,inv)=>s+(inv.items||[]).reduce((ss,i)=>ss+parseFloat(i.kg||0),0),0);
+  const totalInvAmt=fInvoices.reduce((s,inv)=>s+(inv.items||[]).reduce((ss,i)=>ss+parseFloat(i.kg||0)*parseFloat(i.price||0),0),0);
+  const pendingOrd=fOrders.filter(o=>o.status==='Pending').length;
+  const line='- - - - - - - - - - - - - -';
+
+  let msg='*SITARA SEQUINS REPORT*
+';
+  msg+=line+'
+';
+  if(from||to) msg+='Period: '+(from||'start')+' to '+(to||'today')+'
+';
+  if(selP) msg+='Party: '+selP+'
+';
+  if(selC) msg+='Color: '+selC+'
+';
+  if(selS) msg+='Shape: '+selS+'
+';
+  msg+=line+'
+';
+  msg+='Orders:      '+fOrders.length+'
+';
+  msg+='Pending:     '+pendingOrd+'
+';
+  msg+='Ordered kg:  '+totalOrdKg.toFixed(2)+'
+';
+  msg+='Invoices:    '+fInvoices.length+'
+';
+  msg+='Invoiced kg: '+totalInvKg.toFixed(2)+'
+';
+  msg+='Pending kg:  '+(totalOrdKg-totalInvKg).toFixed(2)+'
+';
+  if(totalInvAmt>0) msg+='Inv Amount:  '+Math.round(totalInvAmt)+'
+';
+  msg+=line+'
+';
+
+  // Add party summary
+  const pm={};
+  fOrders.forEach(o=>{
+    if(!pm[o.party])pm[o.party]={ordKg:0,invKg:0,invAmt:0};
+    pm[o.party].ordKg+=o.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+  });
+  fInvoices.forEach(inv=>{
+    if(!pm[inv.party])pm[inv.party]={ordKg:0,invKg:0,invAmt:0};
+    pm[inv.party].invKg+=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    pm[inv.party].invAmt+=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);
+  });
+  Object.entries(pm).sort((a,b)=>b[1].ordKg-a[1].ordKg).forEach(([p,d])=>{
+    const net=(d.ordKg-d.invKg).toFixed(2);
+    msg+=p+'
+';
+    msg+='  Ord:'+d.ordKg.toFixed(2)+' Inv:'+d.invKg.toFixed(2)+' Pend:'+net;
+    if(d.invAmt>0) msg+=' Amt:'+Math.round(d.invAmt);
+    msg+='
+';
+  });
+
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+function sharePendingWhatsApp(mode){
+  mode=mode||'item';
+  const invByItem={};
+  const invByPartyItem={};
+  invoices.forEach(inv=>{
+    if(!invByPartyItem[inv.party])invByPartyItem[inv.party]={};
+    (inv.items||[]).forEach(i=>{
+      const k=i.color+'||'+i.shape;
+      invByItem[k]=(invByItem[k]||0)+parseFloat(i.kg||0);
+      invByPartyItem[inv.party][k]=(invByPartyItem[inv.party][k]||0)+parseFloat(i.kg||0);
+    });
+  });
+  function extractNum(s){ const m=s.match(/\d+/); return m?parseInt(m[0]):0; }
+  function extractPrefix(s){ return s.replace(/\d+.*$/,''); }
+  function numSort(a,b){
+    const pa=extractPrefix(a.color),pb=extractPrefix(b.color);
+    if(pa!==pb)return pa.localeCompare(pb);
+    const na=extractNum(a.color),nb=extractNum(b.color);
+    if(na!==nb)return na-nb;
+    return extractNum(a.shape)-extractNum(b.shape);
+  }
+  const line='- - - - - - - - - - - - - -';
+  let msg='';
+
+  if(mode==='item'){
+    const ordByItem={};
+    orders.filter(o=>o.status==='Pending').forEach(o=>o.items.forEach(i=>{
+      const k=i.color+'||'+i.shape;
+      if(!ordByItem[k])ordByItem[k]={color:i.color,shape:i.shape,totalKg:0};
+      ordByItem[k].totalKg+=parseFloat(i.kg||0);
+    }));
+    const items=Object.values(ordByItem).map(v=>{
+      const net=v.totalKg-(invByItem[v.color+'||'+v.shape]||0);
+      return net>0.001?{color:v.color,shape:v.shape,net}:null;
+    }).filter(Boolean).sort(numSort);
+    const totalNet=items.reduce((s,i)=>s+i.net,0);
+    msg='*Item Pending*  '+today().slice(5)+'
+'+line+'
+';
+    items.forEach(i=>{ msg+=i.color+' '+i.shape+'  '+i.net.toFixed(2)+'
+'; });
+    msg+=line+'
+TOTAL  '+totalNet.toFixed(2)+'
+';
+  } else {
+    const partyMap={};
+    orders.filter(o=>o.status==='Pending').forEach(o=>{
+      if(!partyMap[o.party])partyMap[o.party]={};
+      o.items.forEach(i=>{
+        const k=i.color+'||'+i.shape;
+        if(!partyMap[o.party][k])partyMap[o.party][k]={color:i.color,shape:i.shape,ordKg:0};
+        partyMap[o.party][k].ordKg+=parseFloat(i.kg||0);
+      });
+    });
+    let grandTotal=0;
+    msg='*Party Pending*  '+today().slice(5)+'
+';
+    Object.entries(partyMap).forEach(([party,itemMap])=>{
+      const pi=invByPartyItem[party]||{};
+      const netItems=Object.values(itemMap).map(it=>{
+        const net=it.ordKg-(pi[it.color+'||'+it.shape]||0);
+        return net>0.001?{color:it.color,shape:it.shape,net}:null;
+      }).filter(Boolean).sort(numSort);
+      if(!netItems.length)return;
+      const partyTotal=netItems.reduce((s,i)=>s+i.net,0);
+      grandTotal+=partyTotal;
+      msg+=line+'
+*'+party+'*  '+partyTotal.toFixed(2)+'
+';
+      netItems.forEach(i=>{ msg+=i.color+' '+i.shape+'  '+i.net.toFixed(2)+'
+'; });
+    });
+    msg+=line+'
+GRAND TOTAL  '+grandTotal.toFixed(2)+'
+';
+  }
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
 
