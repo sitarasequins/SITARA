@@ -1336,12 +1336,11 @@ function startApp(){
 
 window.onload = function(){
   ADMIN_PW = '1';
-  // If URL has ?clear=1, wipe localStorage first
-  if(window.location.search.includes('clear=1')){
+  // FORCE CLEAR old data - version stamp
+  const DATA_VER = 'v20260530';
+  if(localStorage.getItem('sitara_ver') !== DATA_VER){
     localStorage.clear();
-    // Remove the ?clear=1 from URL without reload
-    window.history.replaceState({},'',window.location.pathname);
-    alert('✅ Local data cleared! App will start fresh.');
+    localStorage.setItem('sitara_ver', DATA_VER);
   }
   loadFromStorage();
   startApp();
