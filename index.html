@@ -1248,7 +1248,14 @@ function renderOrders(){
     byParty[o.party].push(o);
   });
 
-  container.innerHTML=Object.entries(byParty).map(([party,partyOrders])=>{
+  // Sort party groups by their most recent order date descending
+  const sortedParties=Object.entries(byParty).sort((a,b)=>{
+    const latestA=a[1][0].date;
+    const latestB=b[1][0].date;
+    return latestB.localeCompare(latestA)||(b[1][0].id-a[1][0].id);
+  });
+
+  container.innerHTML=sortedParties.map(([party,partyOrders])=>{
     const orderRows=partyOrders.map(o=>{
       const itemsStr=o.items.map(i=>`<span style="font-size:11px;background:#f5f5f5;border-radius:3px;padding:1px 6px;margin-right:3px">${i.color} ${i.shape} ${fmtKg(i.kg)}</span>`).join('');
       const total=o.items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFloat(i.price||0)),0);
