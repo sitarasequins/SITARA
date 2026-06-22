@@ -18,11 +18,13 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const DATA_DOC = doc(db, 'sitara26', 'appdata');
-  const INV_DOC  = doc(db, 'sitara26', 'invoices_backup');
+  const DATA_DOC    = doc(db, 'sitara26', 'appdata');
+  const INV_DOC     = doc(db, 'sitara26', 'invoices_backup');
+  const COURIER_DOC = doc(db, 'sitara26', 'courier_data');
+  const BACKUP_COL  = 'sitara26_backups';
 
   // Expose to global scope for use by app JS
-  window._firestore = { db, doc, setDoc, getDoc, onSnapshot, DATA_DOC, INV_DOC };
+  window._firestore = { db, doc, setDoc, getDoc, onSnapshot, DATA_DOC, INV_DOC, COURIER_DOC, BACKUP_COL };
   window._firebaseReady = true;
 
   // Listen for real-time updates from other devices
@@ -33,71 +35,101 @@
     if(data){
       window.colors       = data.colors       || window.colors;
       window.shapes       = data.shapes       || window.shapes;
-      window.orders       = data.orders       || window.orders;
       window.parties      = data.parties      || window.parties;
-      window.invoices     = data.invoices     || window.invoices;
       window.nextOid      = data.nextOid      || window.nextOid;
       window.nextPaId     = data.nextPaId     || window.nextPaId;
       window.nextInvNum   = data.nextInvNum   || window.nextInvNum;
       window.nextInvoiceNum = data.nextInvoiceNum || window.nextInvoiceNum;
+      // Track Firebase order count for safety
+      window._firebaseOrderCount = (data.orders||[]).length;
+      // Merge orders - preserve local changes, only update from remote if more orders
+      if((data.orders||[]).length >= (window.orders||[]).length){
+        window.orders = data.orders || window.orders;
+      }
+      // Merge invoices - preserve courier and local fields
+      if(data.invoices && data.invoices.length > 0){
+        const remoteInvMap={};
+        data.invoices.forEach(inv=>remoteInvMap[inv.id]=inv);
+        // Keep local courier/bags if remote doesn't have them
+        window.invoices = data.invoices.map(inv=>{
+          const local=(window.invoices||[]).find(x=>x.id===inv.id);
+          return {...inv,
+            courier: inv.courier||(local&&local.courier)||'',
+            bags: inv.bags!=null?inv.bags:(local&&local.bags!=null?local.bags:0)
+          };
+        });
+      }
+      // Fix boolean status + normalize case
+      if(window.orders) window.orders.forEach(o=>{
+        if(o.status===true) o.status='Delivered';
+        if(o.status===false||!o.status) o.status='Pending';
+        o.items=(o.items||[]).map(i=>({...i,color:(i.color||'').toUpperCase(),shape:(i.shape||'').toLowerCase()}));
+      });
+      if(window.invoices) window.invoices.forEach(inv=>{
+        inv.items=(inv.items||[]).map(i=>({...i,color:(i.color||'').toUpperCase(),shape:(i.shape||'').toLowerCase()}));
+      });
       if(window.renderAll) window.renderAll();
       window.setSyncStatus('saved','☁ Synced');
       setTimeout(()=>window.setSyncStatus('','☁ Cloud'), 2000);
     }
   });
 </script>
-<link rel="stylesheet" href="./Sitara Sequins_files/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:17px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f9;color:#1a1a1a;font-size:15px}
 :root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ececec;--border:#e0e0e0;--border2:#ccc;--text:#1a1a1a;--text2:#555;--text3:#999;--blue:#2563eb;--blue-bg:#eff6ff;--blue-border:#bfdbfe;--radius:8px;--radius-lg:12px}
 /* App */
 #app{display:none;max-width:1100px;margin:0 auto;padding:16px}
 .topbar-app{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
-.app-title{font-size:16px;font-weight:700}
-.app-title span{font-weight:400;color:#999}
-.sync-status{font-size:11px;padding:3px 10px;border-radius:99px;background:#f0f0f0;color:#888}
-.sync-status.saving{background:#fffbeb;color:#92400e}
-.sync-status.saved{background:#f0fdf4;color:#166534}
-.sync-status.error{background:#fef2f2;color:#dc2626}
-.tabs{display:flex;border-bottom:1.5px solid #e0e0e0;margin-bottom:16px;overflow-x:auto;gap:0}
-.tab{font-size:13px;padding:9px 16px;cursor:pointer;color:#888;border-bottom:2.5px solid transparent;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;font-weight:500;transition:color .15s}
-.tab.active{color:#2563eb;border-bottom-color:#2563eb}
-.tab:hover{color:#1a1a1a}
+.app-title{font-size:17px;font-weight:800;letter-spacing:-.02em;color:#1a1a1a}
+.app-title span{font-weight:400;color:#aaa;letter-spacing:0}
+.sync-status{font-size:11px;padding:4px 12px;border-radius:99px;background:#f4f4f5;color:#888;font-weight:500;letter-spacing:.02em;transition:all .3s}
+.sync-status.saving{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+.sync-status.saved{background:#f0fdf4;color:#15803d;border:1px solid #86efac}
+.sync-status.error{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
+.tabs{display:flex;border-bottom:2px solid #e8e8e8;margin-bottom:18px;overflow-x:auto;gap:0}
+.tab{font-size:13px;padding:10px 18px;cursor:pointer;color:#999;border-bottom:2.5px solid transparent;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;font-weight:500;transition:all .15s;letter-spacing:.01em}
+.tab.active{color:#2563eb;border-bottom-color:#2563eb;font-weight:600}
+.tab:hover{color:#333;background:#f8f9fa}
 .view{display:none}
 .view.active{display:block}
 /* Buttons */
-.btn{height:32px;padding:0 14px;font-size:13px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#333;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-weight:500;transition:background .15s}
-.btn:hover{background:#f5f5f5}
-.btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
-.btn-primary:hover{background:#1d4ed8}
-.btn-danger{color:#dc2626;border-color:#fecaca}
-.btn-danger:hover{background:#fef2f2}
-.btn-sm{height:26px;font-size:11px;padding:0 10px}
+.btn{height:34px;padding:0 16px;font-size:13px;border-radius:8px;border:1.5px solid #e0e0e0;background:#fff;color:#444;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-weight:500;transition:all .15s;letter-spacing:.01em}
+.btn:hover{background:#f5f7fa;border-color:#ccc}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:#2563eb;border-color:#2563eb;color:#fff;box-shadow:0 1px 3px rgba(37,99,235,.25)}
+.btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+.btn-danger{color:#dc2626;border-color:#fecaca;background:#fff}
+.btn-danger:hover{background:#fef2f2;border-color:#fca5a5}
+.btn-sm{height:28px;font-size:12px;padding:0 11px;border-radius:7px}
 /* Stats */
-.stat{background:#fff;border-radius:8px;padding:10px 13px;border:1px solid #e8e8e8}
-.stat-label{font-size:11px;color:#999;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
-.stat-val{font-size:18px;font-weight:700;color:#1a1a1a}
+.stat{background:#fff;border-radius:10px;padding:12px 16px;border:1px solid #ebebeb;transition:box-shadow .15s}
+.stat:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.stat-label{font-size:11px;color:#aaa;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.stat-val{font-size:20px;font-weight:700;color:#1a1a1a;line-height:1.2}
 /* Table */
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.05em;padding:6px 8px;border-bottom:1.5px solid #e8e8e8}
-td{padding:9px 8px;border-bottom:1px solid #f0f0f0;color:#1a1a1a;vertical-align:middle}
+th{text-align:left;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;border-bottom:2px solid #f0f0f0;background:#fafbfc}
+td{padding:10px 10px;border-bottom:1px solid #f4f4f4;color:#1a1a1a;vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#fafafa}
+tr:hover td{background:#f8faff}
 /* Badges */
-.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px}
-.badge-pending{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
-.badge-delivered{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;letter-spacing:.02em}
+.badge-pending{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.badge-delivered{background:#f0fdf4;color:#15803d;border:1px solid #86efac}
+.badge-cancelled{background:#f9fafb;color:#9ca3af;border:1px solid #e5e7eb;text-decoration:line-through}
 /* Split layout */
 .split{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
 @media(max-width:720px){.split{grid-template-columns:1fr}}
-.form-panel{background:#fff;border-radius:12px;padding:16px;position:sticky;top:12px;border:1px solid #e8e8e8;box-shadow:0 1px 4px rgba(0,0,0,.05)}
-.form-panel h4{font-size:14px;font-weight:600;margin-bottom:14px;color:#1a1a1a}
+.form-panel{background:#fff;border-radius:14px;padding:20px;position:sticky;top:12px;border:1px solid #e8e8e8;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.form-panel h4{font-size:15px;font-weight:700;margin-bottom:16px;color:#1a1a1a;padding-bottom:10px;border-bottom:1.5px solid #f0f0f0}
 /* Form fields */
 .field{margin-bottom:11px}
 .field label{display:block;font-size:12px;font-weight:500;color:#666;margin-bottom:4px}
-.field input,.field select{width:100%;font-size:13px;padding:7px 10px;border-radius:7px;border:1.5px solid #ddd;background:#fff;color:#1a1a1a;outline:none;transition:border .15s}
-.field input:focus,.field select:focus{border-color:#2563eb}
+.field input,.field select{width:100%;font-size:13px;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e5e5;background:#fff;color:#1a1a1a;outline:none;transition:all .15s}
+.field input:focus,.field select:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.field input:hover,.field select:hover{border-color:#ccc}
 /* Item rows */
 .item-hdr{display:grid;grid-template-columns:1fr 1fr 58px 58px 60px 24px;gap:5px;margin-bottom:4px}
 .item-hdr span{font-size:11px;color:#999;font-weight:500}
@@ -122,10 +154,11 @@ tr:hover td{background:#fafafa}
 /* Party rows */
 .party-row-item{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:8px;padding:10px 13px;border:1px solid #e8e8e8;margin-bottom:7px}
 /* Cards */
-.prod-card{background:#fff;border-radius:8px;padding:13px 15px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;border:1px solid #e8e8e8}
-.prod-item-label{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
-.prod-meta{font-size:12px;color:#888}
-.prod-kg{font-size:20px;font-weight:700;color:#1a1a1a}
+.prod-card{background:#fff;border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;border:1px solid #ebebeb;transition:box-shadow .15s}
+.prod-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.07);border-color:#ddd}
+.prod-item-label{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:4px}
+.prod-meta{font-size:12px;color:#999}
+.prod-kg{font-size:22px;font-weight:700;color:#d97706}
 /* Modal */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:16px}
 .modal-bg.open{display:flex}
@@ -168,6 +201,15 @@ tr:hover td{background:#fafafa}
 /* Misc */
 .empty{text-align:center;color:#bbb;font-size:13px;padding:28px 0}
 .save-ind{font-size:11px}
+/* Setup screen */
+#setup-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999}
+.setup-box{background:#fff;border-radius:20px;padding:40px 36px;max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);text-align:center}
+.setup-logo{font-size:26px;font-weight:800;color:#1e3a5f;margin-bottom:4px}
+.setup-logo span{color:#2563eb}
+.setup-sub{font-size:13px;color:#999;margin-bottom:28px}
+.setup-btn{width:100%;padding:13px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px}
+.setup-btn:hover{background:#1d4ed8}
+.setup-err{color:#dc2626;font-size:13px;margin-top:10px;display:none}
 /* Sort buttons */
 .sort-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;align-items:center}
 .sort-bar-label{font-size:11px;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
@@ -201,10 +243,11 @@ tr:hover td{background:#fafafa}
 .combo-opt{padding:10px 14px;font-size:14px;cursor:pointer;white-space:nowrap;border-bottom:1px solid #f5f5f5;-webkit-tap-highlight-color:transparent}
 .combo-opt:last-child{border-bottom:none}
 .combo-opt:hover,.combo-opt:active{background:#eff6ff;color:#2563eb;font-weight:600}
-.party-pending-card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;border:1px solid #e8e8e8;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.party-pending-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.party-pending-name{font-size:14px;font-weight:700;color:#1a1a1a}
-.party-pending-meta{font-size:11px;color:#999}
+.party-pending-card{background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:12px;border:1px solid #ebebeb;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:box-shadow .15s}
+.party-pending-card:hover{box-shadow:0 3px 12px rgba(0,0,0,.08)}
+.party-pending-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.party-pending-name{font-size:15px;font-weight:700;color:#1a1a1a}
+.party-pending-meta{font-size:12px;color:#aaa;font-weight:500}
 .party-pending-table{width:100%;border-collapse:collapse;font-size:12px}
 .party-pending-table th{font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:3px 6px;border-bottom:1px solid #f0f0f0;text-align:left}
 .party-pending-table td{padding:6px 6px;border-bottom:1px solid #f8f8f8;vertical-align:middle}
@@ -258,24 +301,30 @@ tr:hover td{background:#fafafa}
 </head>
 <body>
 
-<div id="setup-screen">
-  <div class="setup-box">
-    <div class="setup-logo">Sitara <span>Sequins</span></div>
-    <div class="setup-sub">Enter password to continue</div>
+
+
+<!-- ===== MAIN APP ===== -->
+<div id="setup-screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999">
+  <div style="background:#fff;border-radius:20px;padding:40px 36px;max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);text-align:center">
+    <div style="font-size:26px;font-weight:800;color:#1e3a5f;margin-bottom:4px">Sitara <span style="color:#2563eb">Sequins</span></div>
+    <div style="font-size:13px;color:#999;margin-bottom:28px">Enter password to continue</div>
     <input type="password" id="setup-pw" placeholder="••••••" autocomplete="off"
       style="width:100%;padding:12px 16px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;text-align:center;letter-spacing:4px;box-sizing:border-box;margin-bottom:4px;outline:none"
       onkeydown="if(event.key==='Enter')doSetup()">
-    <button class="setup-btn" onclick="doSetup()">OPEN APP →</button>
-    <div class="setup-err" id="setup-err">❌ Wrong password</div>
+    <button onclick="doSetup()" style="width:100%;padding:13px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px">OPEN APP →</button>
+    <div id="setup-err" style="color:#dc2626;font-size:13px;margin-top:10px;display:none">❌ Wrong password</div>
   </div>
 </div>
 
-<!-- ===== MAIN APP ===== -->
-<div id="app" style="display: block;">
+<div id="app" style="display: none;">
   <div class="topbar-app">
     <div style="display:flex;align-items:center;gap:10px">
       <div class="app-title">Sitara <span>Sequins</span></div>
       <span class="sync-status " id="sync-status">☁ Cloud</span>
+      <span id="online-dot" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 10px;border-radius:99px;background:#f0fdf4;color:#166534;font-weight:600">
+        <span id="online-dot-circle" style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block"></span>
+        <span id="online-dot-text">Online</span>
+      </span>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn btn-sm" onclick="exportBackup()" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8" title="Download backup JSON">📤 Backup</button>
@@ -289,7 +338,8 @@ tr:hover td{background:#fafafa}
 
   <div class="tabs">
     <button class="tab" onclick="switchTab(&#39;orders&#39;,this)">Orders</button>
-    <button class="tab active" onclick="switchTab(&#39;invoices&#39;,this)">Invoices</button>
+    <button class="tab" onclick="switchTab(&#39;invoices&#39;,this)">New Invoice</button>
+    <button class="tab active" onclick="switchTab(&#39;invlist&#39;,this)">Invoice List</button>
     <button class="tab" onclick="switchTab(&#39;catalog&#39;,this)">Create</button>
     <button class="tab" onclick="switchTab('production',this)">Pending Work</button>
     <button class="tab" onclick="switchTab('reports',this)">📊 Reports</button>
@@ -322,24 +372,37 @@ tr:hover td{background:#fafafa}
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <div class="stat"><div class="stat-label">Pending Orders</div><div class="stat-val" id="s-pending" style="color:#d97706">0</div></div>
             <div class="stat"><div class="stat-label">Parties</div><div class="stat-val" id="s-parties">0</div></div>
+            <div class="stat" style="cursor:pointer" onclick="toggleCancelledOrders()"><div class="stat-label">Cancelled</div><div class="stat-val" id="s-cancelled" style="color:#9ca3af">0</div></div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <label style="font-size:12px;color:#888;font-weight:500">Filter by date:</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label style="font-size:12px;color:#888;font-weight:500">Filter:</label>
             <input type="date" id="order-date-filter" onchange="renderOrders()"
               style="padding:5px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
-            <button class="btn btn-sm" onclick="document.getElementById('order-date-filter').value='';renderOrders()">All</button>
+            <select id="order-party-filter" onchange="renderOrders()"
+              style="padding:5px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none;max-width:180px">
+              <option value="">All Parties</option>
+            </select>
+            <input type="text" id="order-item-search" placeholder="🔍 Search color..." oninput="renderOrders()"
+              style="padding:5px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none;width:150px">
+            <button class="btn btn-sm" onclick="document.getElementById('order-date-filter').value='';document.getElementById('order-party-filter').value='';document.getElementById('order-item-search').value='';renderOrders()">✕ Clear</button>
           </div>
         </div>
         <div id="pending-orders-list"></div>
         <div id="empty-orders" class="empty" style="display: none;">No pending orders.</div>
+        <div id="cancelled-orders-list" style="display:none;margin-top:16px">
+          <div style="font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+            <span>Cancelled Orders</span>
+            <button class="btn btn-sm" onclick="toggleCancelledOrders()" style="font-size:11px">Hide</button>
+          </div>
+          <div id="cancelled-orders-body"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- INVOICES -->
-  <div id="tab-invoices" class="view active">
-    <div class="split">
-      <div class="form-panel">
+  <!-- NEW INVOICE FORM -->
+  <div id="tab-invoices" class="view">
+    <div class="form-panel" style="max-width:500px;margin:0 auto">
         <h4 id="inv-form-title">New Invoice</h4>
         <div class="field"><label>Party name</label>
           <div class="combo-wrap" style="width:100%">
@@ -361,6 +424,20 @@ tr:hover td{background:#fafafa}
           Total Weight: <span id="inv-form-weight" style="color:#2563eb">0.00 kg</span>
         </div>
         <div class="field" style="margin-top:6px">
+          <label>Extra Charges <span style="font-size:11px;color:#aaa">(optional — added to total)</span></label>
+          <div style="display:flex;gap:6px">
+            <input id="if-charge-label" type="text" placeholder="e.g. Transport, Packing..."
+              style="flex:1;font-size:13px;padding:7px 10px;border-radius:7px;border:1.5px solid #ddd;outline:none" oninput="updateInvFormTotal()">
+            <input id="if-charge-amt" type="number" min="0" placeholder="₹ Amount"
+              style="width:110px;font-size:13px;padding:7px 10px;border-radius:7px;border:1.5px solid #ddd;outline:none" oninput="updateInvFormTotal()">
+          </div>
+        </div>
+        <div class="field" style="margin-top:6px">
+          <label>Bags <span style="font-size:11px;color:#aaa">(optional)</span></label>
+          <input id="if-bags" type="number" min="0" placeholder="No. of bags"
+            style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e5e5;outline:none">
+        </div>
+        <div class="field" style="margin-top:6px">
           <label>Remarks <span style="font-size:11px;color:#aaa">(optional — printed at bottom)</span></label>
           <textarea id="if-remarks" placeholder="e.g. Payment received, Delivery by courier, Special instructions..."
             style="width:100%;padding:8px 10px;border-radius:7px;border:1.5px solid #ddd;font-size:13px;outline:none;resize:vertical;min-height:60px;box-sizing:border-box;font-family:inherit"></textarea>
@@ -372,30 +449,41 @@ tr:hover td{background:#fafafa}
             <button class="btn btn-primary" onclick="saveInvoice()" id="save-inv-btn">Save invoice</button>
           </div>
         </div>
-      </div>
-      <div>
+    </div>
+  </div>
+
+  <!-- INVOICE LIST -->
+  <div id="tab-invlist" class="view active">
+    <div>
         <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <div class="stat"><div class="stat-label">Total</div><div class="stat-val" id="si-total">0</div></div>
             <div class="stat"><div class="stat-label">Amount</div><div class="stat-val" id="si-amount" style="font-size:15px">₹0</div></div>
+
           </div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <input type="date" id="inv-date-filter" onchange="renderInvoiceList()"
               style="padding:5px 9px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none">
-            <button class="btn btn-sm" onclick="document.getElementById('inv-date-filter').value='';renderInvoiceList()" style="font-size:11px">All</button>
+            <select id="inv-party-filter" onchange="renderInvoiceList()"
+              style="padding:5px 9px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none;max-width:170px">
+              <option value="">All Parties</option>
+            </select>
+            <input type="text" id="inv-item-search" placeholder="🔍 Search color..." oninput="renderInvoiceList()"
+              style="padding:5px 9px;border-radius:7px;border:1.5px solid #ddd;font-size:12px;outline:none;width:150px">
+            <button class="btn btn-sm" onclick="document.getElementById('inv-date-filter').value='';document.getElementById('inv-party-filter').value='';document.getElementById('inv-item-search').value='';renderInvoiceList()" style="font-size:11px">✕ Clear</button>
             <button class="btn btn-sm" onclick="exportTallyXML()" style="background:#7c3aed;color:#fff;border-color:#7c3aed">📤 Export Tally XML</button>
+            <button class="btn btn-sm" onclick="openDispatchRegister()" style="background:#0f766e;color:#fff;border-color:#0f766e">📋 Dispatch Register</button>
           </div>
         </div>
         <table>
           <thead><tr>
-            <th style="width:14%">Inv#</th>
-            <th style="width:20%">Party</th><th style="width:13%">Date</th>
-            <th style="width:13%">Amount</th><th>Actions</th>
+            <th style="width:12%">Inv#</th>
+            <th style="width:18%">Party</th><th style="width:10%">Date</th>
+            <th style="width:10%">Kg</th><th style="width:12%">Amount</th><th>Actions</th>
           </tr></thead>
           <tbody id="inv-body"></tbody>
         </table>
         <div id="empty-invlist" class="empty" style="display: none;">No invoices yet.</div>
-      </div>
     </div>
   </div>
 
@@ -481,6 +569,7 @@ tr:hover td{background:#fafafa}
         <button class="btn btn-sm" onclick="printPendingPOS('party')" style="background:#374151;color:#fff;border-color:#374151">🧾 Party POS</button>
         <button class="btn btn-sm" onclick="sharePendingWhatsApp('item')" style="background:#25D366;color:#fff;border-color:#25D366">💬 Item WA</button>
         <button class="btn btn-sm" onclick="sharePendingWhatsApp('party')" style="background:#128C7E;color:#fff;border-color:#128C7E">💬 Party WA</button>
+
         <!-- Search -->
         <input id="prod-search" type="text" placeholder="🔍 Search item / party…"
           oninput="renderProduction()"
@@ -558,6 +647,7 @@ tr:hover td{background:#fafafa}
         <div id="admin-pw-changed" style="color:#166534;font-size:12px;display:none;margin-bottom:12px">&#10003; Password updated</div>
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#16a34a;margin-top:12px">Recovery</div>
         <button class="btn" onclick="recoverInvoices()" style="justify-content:center;background:#f0fdf4;border-color:#bbf7d0;color:#166534;margin-bottom:12px;width:100%">🔄 Recover Invoices from Backup</button>
+        <button class="btn" onclick="showAutoBackups()" style="justify-content:center;background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;margin-bottom:12px;width:100%">☁ Restore from Auto Backup</button>
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#dc2626">Danger Zone</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-danger" onclick="adminClearOrders()" style="justify-content:center">&#128465; Delete ALL orders</button>
@@ -568,6 +658,37 @@ tr:hover td{background:#fafafa}
       </div>
     </div>
   </div>
+  <!-- DISPATCH REGISTER MODAL -->
+  <div class="modal-bg" id="modal-dispatch">
+    <div class="modal" style="max-width:560px">
+      <h3>📋 Dispatch Register</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end">
+        <div class="field" style="margin:0;flex:1;min-width:100px">
+          <label>From Inv #</label>
+          <input type="number" id="dr-from-inv" placeholder="590" style="width:100%">
+        </div>
+        <div class="field" style="margin:0;flex:1;min-width:100px">
+          <label>To Inv #</label>
+          <input type="number" id="dr-to-inv" placeholder="680" style="width:100%">
+        </div>
+        <div class="field" style="margin:0;flex:1;min-width:120px">
+          <label>From Date</label>
+          <input type="date" id="dr-from-date" style="width:100%">
+        </div>
+        <div class="field" style="margin:0;flex:1;min-width:120px">
+          <label>To Date</label>
+          <input type="date" id="dr-to-date" style="width:100%">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-sm" onclick="previewDispatch()" style="background:#0f766e;color:#fff;border-color:#0f766e">Preview</button>
+        <button class="btn btn-sm" onclick="printDispatch()" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🖨 Print A4</button>
+        <button class="btn btn-sm" onclick="closeModal('modal-dispatch')">Close</button>
+      </div>
+      <div id="dr-preview" style="overflow-x:auto;font-size:13px;"></div>
+    </div>
+  </div>
+
   <!-- IMPORT MODAL -->
   <div class="modal-bg" id="modal-import">
     <div class="modal" style="max-width:480px">
@@ -989,7 +1110,22 @@ let nextOid=1, nextPaId=83, nextInvNum=1, nextInvoiceNum=590;
 // ─────────────────────────────────────────────────────────────────────────
 
 let filt='all', editOid=null, editInvId=null, ovOid=null, pdPartyId=null;
-let prodSort='qty-desc'; // default sort for Today's Work
+let prodSort='qty-desc';
+let orderSort='date';
+let invSort='date';
+
+function setOrderSort(s,el){
+  orderSort=s;
+  document.querySelectorAll('[id^="osort-"]').forEach(b=>{b.style.background='#fff';b.style.color='#444';b.style.borderColor='#e0e0e0';});
+  el.style.background='#2563eb';el.style.color='#fff';el.style.borderColor='#2563eb';
+  renderOrders();
+}
+function setInvSort(s,el){
+  invSort=s;
+  document.querySelectorAll('[id^="isort-"]').forEach(b=>{b.style.background='#fff';b.style.color='#444';b.style.borderColor='#e0e0e0';});
+  el.style.background='#2563eb';el.style.color='#fff';el.style.borderColor='#2563eb';
+  renderInvoiceList();
+}
 
 // Date format helper - converts YYYY-MM-DD to DDMon format e.g. 01Jun
 function fmtDate(d){
@@ -1009,10 +1145,7 @@ function showReconnect(){}
 
 const APP_PW = '786';
 
-function doSetup(){
-  document.getElementById('setup-screen').style.display='none';
-  startApp();
-}
+
 
 // ============================================================
 // JSONBIN STORAGE
@@ -1037,20 +1170,65 @@ function saveToBin(){
 
   // Save to Firebase if ready
   if(window._firebaseReady && window._firestore){
+    // Safety: never save if we have fewer orders/invoices than Firebase
+    if(window._firebaseOrderCount && orders.length < window._firebaseOrderCount){
+      console.warn('Safety block: local orders('+orders.length+') < Firebase orders('+window._firebaseOrderCount+'). Not saving.');
+      setSyncStatus('error','⚠ Save blocked - data mismatch');
+      setTimeout(()=>setSyncStatus('','☁ Cloud'),3000);
+      return;
+    }
     setSyncStatus('saving','☁ Saving...');
-    const {setDoc, DATA_DOC, INV_DOC} = window._firestore;
+    const {setDoc, getDoc, DATA_DOC, INV_DOC} = window._firestore;
     const payload={colors,shapes,orders,parties,invoices,
       nextOid,nextPaId,nextInvNum,nextInvoiceNum,
       updatedAt: new Date().toISOString()};
     window._skipNextSnapshot = true;
-    // Save main data
-    setDoc(DATA_DOC, payload)
-      .then(()=>{
+    // Before saving, fetch current Firebase data and preserve courier/bags
+    getDoc(DATA_DOC).then(snap=>{
+      if(snap.exists()){
+        const firebaseData = snap.data();
+        const firebaseInvMap = {};
+        (firebaseData.invoices||[]).forEach(inv=>firebaseInvMap[inv.id]=inv);
+        // Merge: preserve courier/bags from Firebase if local doesn't have them
+        payload.invoices = payload.invoices.map(inv=>{
+          const fb = firebaseInvMap[inv.id];
+          if(fb){
+            return {
+              ...inv,
+              courier: inv.courier || fb.courier || '',
+              bags: inv.bags!=null&&inv.bags!==0 ? inv.bags : (fb.bags||0)
+            };
+          }
+          return inv;
+        });
+        // Also add any invoices that exist in Firebase but not locally (prevents losing invoices on sync)
+        const localInvIds = new Set(payload.invoices.map(i=>i.id));
+        (firebaseData.invoices||[]).forEach(fbInv=>{
+          if(!localInvIds.has(fbInv.id)){
+            payload.invoices.push(fbInv);
+          }
+        });
+        // Sort by serial
+        payload.invoices.sort((a,b)=>a.serial-b.serial);
+        // Also preserve orders from Firebase not in local
+        const firebaseOrdMap = {};
+        (firebaseData.orders||[]).forEach(o=>firebaseOrdMap[o.id]=o);
+        const localOrdIds = new Set(payload.orders.map(o=>o.id));
+        (firebaseData.orders||[]).forEach(fbOrd=>{
+          if(!localOrdIds.has(fbOrd.id)){
+            payload.orders.push(fbOrd);
+          }
+        });
+      }
+      return setDoc(DATA_DOC, payload);
+    }).then(()=>{
         setSyncStatus('saved','☁ Saved');
         setTimeout(()=>setSyncStatus('','☁ Cloud'), 2000);
+        showSaveToast('Saved to cloud');
       })
       .catch(e=>{
         setSyncStatus('error','☁ Save failed');
+        showSaveToast('Save failed! Check connection',true);
         console.error(e);
       });
     // Save invoices separately for extra protection
@@ -1064,6 +1242,32 @@ function saveToBin(){
     setSyncStatus('saved','✓ Saved locally');
     setTimeout(()=>setSyncStatus('','Ready'), 1800);
   }
+}
+
+function deduplicateShapes(){
+  // Remove case-insensitive duplicates, normalize shapes to lowercase
+  const seen=new Set();
+  shapes=shapes.filter(s=>{
+    const key=s.toLowerCase();
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  }).map(s=>s.toLowerCase());
+}
+
+function normalizeColors(){
+  // Remove case-insensitive duplicate colors, normalize to UPPERCASE
+  const seen=new Set();
+  colors=colors.filter(c=>{
+    const name=typeof c==='object'?c.name:c;
+    const key=name.toUpperCase();
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  }).map(c=>{
+    if(typeof c==='object') return{...c,name:c.name.toUpperCase()};
+    return c.toUpperCase();
+  });
 }
 
 function loadFromStorage(){
@@ -1080,6 +1284,23 @@ function loadFromStorage(){
     nextPaId     = data.nextPaId     || nextPaId;
     nextInvNum   = data.nextInvNum   || nextInvNum;
     nextInvoiceNum = data.nextInvoiceNum || nextInvoiceNum;
+    deduplicateShapes();
+    normalizeColors();
+    // Fix boolean status bug + normalize case
+    orders.forEach(o=>{
+      if(o.status===true) o.status='Delivered';
+      if(o.status===false||!o.status) o.status='Pending';
+      o.items=(o.items||[]).map(i=>({...i,
+        color:(i.color||'').toUpperCase(),
+        shape:(i.shape||'').toLowerCase()
+      }));
+    });
+    invoices.forEach(inv=>{
+      inv.items=(inv.items||[]).map(i=>({...i,
+        color:(i.color||'').toUpperCase(),
+        shape:(i.shape||'').toLowerCase()
+      }));
+    });
     return true;
   } catch(e){ return false; }
 }
@@ -1092,16 +1313,85 @@ function saveAll(){
 // ============================================================
 // APP START
 // ============================================================
+function getBackupSlot(){
+  const now = new Date();
+  const h = now.getHours();
+  // Morning: before 14:00, Afternoon: 14:00-19:00, Evening: 19:00+
+  if(h < 14) return 'morning';
+  if(h < 19) return 'afternoon';
+  return 'evening';
+}
+
+function autoBackup(){
+  if(!window._firebaseReady || !window._firestore) return;
+  const {db, doc, setDoc, getDoc, BACKUP_COL} = window._firestore;
+  if(!BACKUP_COL) return;
+
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const slot = getBackupSlot();
+  const backupKey = today + '_' + slot; // e.g. 2026-06-22_morning
+  const lsKey = 'sitara_backup_done_' + backupKey;
+
+  // Check if already backed up this slot today
+  if(localStorage.getItem(lsKey)) return;
+
+  // Wait for data to load first
+  setTimeout(()=>{
+    if(!invoices.length && !orders.length) return; // no data yet
+    const backupDoc = doc(db, BACKUP_COL, backupKey);
+    const payload = {
+      colors, shapes, orders, parties, invoices,
+      nextOid, nextPaId, nextInvNum, nextInvoiceNum,
+      savedAt: new Date().toISOString(),
+      slot: slot,
+      date: today
+    };
+    setDoc(backupDoc, payload)
+      .then(()=>{
+        localStorage.setItem(lsKey, '1');
+        console.log('Auto backup saved:', backupKey);
+        showSaveToast('Auto backup saved (' + slot + ')');
+      })
+      .catch(e=>console.error('Auto backup failed:',e));
+  }, 5000); // Wait 5 seconds for Firebase data to load
+}
+
 function startApp(){
   document.getElementById('app').style.display='block';
   renderAll();
   setTimeout(()=>{ resetOrderForm(); resetInvForm(); }, 100);
+  // Re-render after Firebase loads
+  setTimeout(()=>{ if(window.renderAll) window.renderAll(); }, 2000);
+  setTimeout(()=>{ if(window.renderAll) window.renderAll(); }, 4000);
+  // Auto backup
+  setTimeout(autoBackup, 6000);
 }
 
+function updateOnlineDot(){
+  const dot=document.getElementById('online-dot-circle');
+  const txt=document.getElementById('online-dot-text');
+  const wrap=document.getElementById('online-dot');
+  if(!dot||!txt||!wrap) return;
+  if(navigator.onLine){
+    dot.style.background='#16a34a';
+    txt.textContent='Online';
+    wrap.style.background='#f0fdf4';
+    wrap.style.color='#166534';
+  } else {
+    dot.style.background='#dc2626';
+    txt.textContent='Offline';
+    wrap.style.background='#fef2f2';
+    wrap.style.color='#dc2626';
+  }
+}
+window.addEventListener('online',  updateOnlineDot);
+window.addEventListener('offline', updateOnlineDot);
+
 function doSetup(){
-  const pw=document.getElementById('setup-pw').value;
+  const pw=document.getElementById('setup-pw').value.trim();
   if(pw==='786'){
     document.getElementById('setup-screen').style.display='none';
+    document.getElementById('setup-err').style.display='none';
     startApp();
   } else {
     document.getElementById('setup-err').style.display='block';
@@ -1110,15 +1400,12 @@ function doSetup(){
   }
 }
 
+
+
 window.onload = function(){
   ADMIN_PW = '786';
-  // FORCE CLEAR old data - version stamp
-  const DATA_VER = 'v20260601_v4';
-  if(localStorage.getItem('sitara_ver') !== DATA_VER){
-    localStorage.setItem('sitara_ver', DATA_VER);
-  }
+  updateOnlineDot();
   loadFromStorage();
-  // Show password screen - do NOT call startApp() here
   setTimeout(()=>{ const el=document.getElementById('setup-pw'); if(el)el.focus(); },300);
   setTimeout(async function(){
     if(window._firebaseReady && window._firestore){
@@ -1138,8 +1425,35 @@ window.onload = function(){
             nextInvNum = data.nextInvNum || nextInvNum;
             nextInvoiceNum = data.nextInvoiceNum || nextInvoiceNum;
             const needsUpdate = colors.length>(data.colors||[]).length || shapes.length>(data.shapes||[]).length || parties.length>(data.parties||[]).length;
-            if(needsUpdate) saveToBin();
+            // Track Firebase order count for safety
+            window._firebaseOrderCount = (data.orders||[]).length;
+            deduplicateShapes();
+            normalizeColors();
+            // Fix boolean status bug
+            orders.forEach(o=>{
+              if(o.status===true) o.status='Delivered';
+              if(o.status===false||!o.status) o.status='Pending';
+              o.items=(o.items||[]).map(i=>({...i,color:(i.color||'').toUpperCase(),shape:(i.shape||'').toLowerCase()}));
+            });
+            invoices.forEach(inv=>{
+              inv.items=(inv.items||[]).map(i=>({...i,color:(i.color||'').toUpperCase(),shape:(i.shape||'').toLowerCase()}));
+            });
+            saveToBin();
             renderAll();
+            // Load courier data from separate protected doc
+            if(window._firestore && window._firestore.COURIER_DOC){
+              const {getDoc:gd2, COURIER_DOC} = window._firestore;
+              gd2(COURIER_DOC).then(csnap=>{
+                if(csnap.exists()){
+                  const courierData = csnap.data();
+                  invoices.forEach(inv=>{
+                    const c = courierData[String(inv.serial)];
+                    if(c && !inv.courier) inv.courier = c;
+                  });
+                  renderInvoiceList();
+                }
+              }).catch(e=>console.error('Courier load failed:',e));
+            }
             setSyncStatus('saved','☁ Cloud ready');
             setTimeout(()=>setSyncStatus('','☁ Cloud'),2000);
           }
@@ -1169,10 +1483,12 @@ function renderAll(){renderOrders();renderInvoiceList();renderCatalog();renderPa
 function switchTab(t,el){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  ['orders','invoices','catalog','production','reports'].forEach(id=>{
-    document.getElementById('tab-'+id).classList.toggle('active',id===t);
+  ['orders','invoices','invlist','catalog','production','reports'].forEach(id=>{
+    const el2=document.getElementById('tab-'+id);
+    if(el2) el2.classList.toggle('active',id===t);
   });
   if(t==='reports') renderReport();
+  if(t==='invoices'){resetInvForm();}
 }
 function setF(f,el){
   // kept for compatibility but no longer used in orders tab
@@ -1209,7 +1525,7 @@ function buildPendingMap(){
     Object.entries(ordered[party]).forEach(([k,v])=>{
       const invKg=(invoiced[party]&&invoiced[party][k])||0;
       const netKg=v.ordKg-invKg;
-      if(netKg>0.001){
+      if(netKg>=1.0){
         const [color,shape]=k.split('||');
         partyItems.push({color,shape,ordKg:v.ordKg,invKg,netKg,price:v.price,refs:v.orderRefs});
       }
@@ -1222,8 +1538,33 @@ function buildPendingMap(){
 function renderOrders(){
   const dateFilter=(document.getElementById('order-date-filter')||{value:''}).value;
   // Filter pending orders by date if selected
+  const partyFilter=(document.getElementById('order-party-filter')||{value:''}).value;
+  const itemSearch=(document.getElementById('order-item-search')||{value:''}).value.trim().toLowerCase();
   let filteredOrders=orders.filter(o=>o.status==='Pending');
   if(dateFilter) filteredOrders=filteredOrders.filter(o=>o.date===dateFilter);
+  if(partyFilter) filteredOrders=filteredOrders.filter(o=>o.party===partyFilter);
+  if(itemSearch) filteredOrders=filteredOrders.filter(o=>
+    o.items.some(i=>i.color.toLowerCase().includes(itemSearch)||i.shape.toLowerCase().includes(itemSearch))
+  );
+  // Also filter items within each order to highlight matching ones
+  if(itemSearch) filteredOrders=filteredOrders.map(o=>({
+    ...o,
+    items: o.items.map(i=>({
+      ...i,
+      _highlight: i.color.toLowerCase().includes(itemSearch)||i.shape.toLowerCase().includes(itemSearch)
+    }))
+  }));
+  // Count cancelled
+  const cancelledOrders=orders.filter(o=>o.status==='Cancelled');
+  const cancelledEl=document.getElementById('s-cancelled');
+  if(cancelledEl)cancelledEl.textContent=cancelledOrders.length;
+  // Populate party dropdown with parties that have pending orders
+  const orderPartyEl=document.getElementById('order-party-filter');
+  if(orderPartyEl){
+    const cur=orderPartyEl.value;
+    const allP=[...new Set(orders.filter(o=>o.status==='Pending').map(o=>o.party))].sort();
+    orderPartyEl.innerHTML='<option value="">All Parties</option>'+allP.map(p=>`<option value="${p}" ${p===cur?'selected':''}}>${p}</option>`).join('');
+  }
 
   const container=document.getElementById('pending-orders-list');
   const empty=document.getElementById('empty-orders');
@@ -1243,10 +1584,20 @@ function renderOrders(){
 
   // Group by party
   const byParty={};
-  filteredOrders.sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id)).forEach(o=>{
+  // Apply sort
+  if(orderSort==='date') filteredOrders.sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id));
+  else if(orderSort==='party') filteredOrders.sort((a,b)=>a.party.localeCompare(b.party));
+  else if(orderSort==='kg') filteredOrders.sort((a,b)=>{
+    const kgA=a.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    const kgB=b.items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    return kgB-kgA;
+  });
+  filteredOrders.forEach(o=>{
     if(!byParty[o.party])byParty[o.party]=[];
     byParty[o.party].push(o);
   });
+  // Within each party, always sort orders by date desc
+  Object.values(byParty).forEach(arr=>arr.sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id)));
 
   // Sort party groups by most recent order descending
   const sortedParties=Object.entries(byParty).sort((a,b)=>{
@@ -1255,9 +1606,31 @@ function renderOrders(){
     return latestB.localeCompare(latestA)||(b[1][0].id-a[1][0].id);
   });
 
+  // Render cancelled orders section
+  const cancelledBody=document.getElementById('cancelled-orders-body');
+  const cancelledList=document.getElementById('cancelled-orders-list');
+  if(cancelledBody&&cancelledList){
+    cancelledList.style.display=showCancelled&&cancelledOrders.length?'block':'none';
+    if(showCancelled){
+      cancelledBody.innerHTML=cancelledOrders.map(o=>{
+        const itemsStr=o.items.map(it=>`<span style="font-size:11px;background:#f5f5f5;border-radius:3px;padding:1px 6px;margin-right:3px;${it.cancelled?'text-decoration:line-through;color:#bbb':''}">${it.color} ${it.shape} ${fmtKg(it.kg)}</span>`).join('');
+        return `<div style="padding:8px 12px;border-radius:8px;border:1px solid #f0f0f0;background:#fafafa;margin-bottom:6px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#9ca3af;margin-bottom:4px">${invLabel(o.invNum)} · ${o.party} · <span style="color:#bbb;font-weight:400">${fmtDate(o.date)}</span></div>
+            <div>${itemsStr}</div>
+          </div>
+          <div style="display:flex;gap:5px;flex-shrink:0">
+            <button class="btn btn-sm" onclick="restoreOrder(${o.id})" style="font-size:11px;color:#16a34a;border-color:#bbf7d0">↩ Restore</button>
+            <button class="btn btn-sm btn-danger" onclick="delOrder(${o.id})" style="font-size:11px">🗑</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
   container.innerHTML=sortedParties.map(([party,partyOrders])=>{
     const orderRows=partyOrders.map(o=>{
-      const itemsStr=o.items.map(i=>`<span style="font-size:11px;background:#f5f5f5;border-radius:3px;padding:1px 6px;margin-right:3px">${i.color} ${i.shape} ${fmtKg(i.kg)}</span>`).join('');
+      const itemsStr=o.items.map(i=>`<span style="font-size:11px;background:${i._highlight?'#dbeafe':'#f5f5f5'};color:${i._highlight?'#1d4ed8':'inherit'};border-radius:3px;padding:1px 6px;margin-right:3px;font-weight:${i._highlight?'600':'400'}">${i.color} ${i.shape} ${fmtKg(i.kg)}</span>`).join('');
       const total=o.items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFloat(i.price||0)),0);
       return `<div style="padding:8px 0;border-bottom:1px solid #f5f5f5;display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
         <div style="flex:1">
@@ -1269,6 +1642,7 @@ function renderOrders(){
           <button class="btn btn-sm" onclick="loadOrderIntoForm(${o.id})">✏ Edit</button>
           <button class="btn btn-sm" onclick="printOrderPOS(${o.id})" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🧾</button>
           <button class="btn btn-sm" onclick="shareOrderWhatsApp(${o.id})" style="background:#25D366;color:#fff;border-color:#25D366">💬</button>
+          <button class="btn btn-sm" onclick="cancelOrderPrompt(${o.id})" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c">✕ Cancel</button>
           <button class="btn btn-sm btn-danger" onclick="delOrder(${o.id})">🗑</button>
         </div>
       </div>`;
@@ -1376,7 +1750,7 @@ function editColorAlias(idx){
 function addColor(){
   const inp=document.getElementById('new-color');
   const aliasInp=document.getElementById('new-color-alias');
-  const v=normalizeStr(inp.value);
+  const v=normalizeStr(inp.value).toUpperCase();
   if(!v)return;
   if(colors.some(c=>colorName(c).toLowerCase()===v.toLowerCase())){alert('Color already exists.');return;}
   const alias=(aliasInp?aliasInp.value.trim():'');
@@ -1385,7 +1759,14 @@ function addColor(){
   saveAll();renderCatalog();
 }
 function delColor(c){colors=colors.filter(x=>colorName(x)!==c);saveAll();renderCatalog();}
-function addShape(){const inp=document.getElementById('new-shape');const v=normalizeStr(inp.value);if(!v||ciIncludes(shapes,v))return;shapes.push(v);inp.value='';saveAll();renderCatalog();}
+function addShape(){
+  const inp=document.getElementById('new-shape');
+  const v=normalizeStr(inp.value);
+  if(!v)return;
+  if(ciIncludes(shapes,v)){alert('Shape already exists.');return;}
+  shapes.push(v.toLowerCase());
+  inp.value='';saveAll();renderCatalog();
+}
 function delShape(s){shapes=shapes.filter(x=>x!==s);saveAll();renderCatalog();}
 document.getElementById('new-color').addEventListener('keydown',e=>{if(e.key==='Enter')addColor();});
 document.getElementById('new-shape').addEventListener('keydown',e=>{if(e.key==='Enter')addShape();});
@@ -1639,7 +2020,8 @@ function getItems(){
   return [...document.querySelectorAll('#items-container .item-row')].map(r=>{
     const combos=r.querySelectorAll('.combo-input');
     const ins=r.querySelectorAll('input[type="number"]');
-    return{color:(combos[0]?.value||'').trim(),shape:(combos[1]?.value||'').trim(),
+    return{color:(combos[0]?.value||'').trim().toUpperCase(),
+           shape:(combos[1]?.value||'').trim().toLowerCase(),
       kg:parseFloat(ins[0]?.value)||0,price:parseFloat(ins[1]?.value)||0};
   }).filter(i=>i.color&&i.shape);
 }
@@ -1678,6 +2060,7 @@ function saveOrder(){
     orders[i]={...orders[i],party,date:dateVal,items};
     resetOrderForm();
     saveAll();renderOrders();renderInvoiceList();
+    showSaveToast('Order updated!');
   } else {
     const newOrder={id:nextOid++,invNum:nextInvNum++,party,date:dateVal,status:'Pending',items};
     orders.push(newOrder);
@@ -1691,6 +2074,94 @@ function delOrder(id){
   if(!confirm('Delete this order?'))return;
   orders=orders.filter(x=>x.id!==id);
   saveAll();renderOrders();renderInvoiceList();
+}
+
+function cancelOrderPrompt(id){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  // Build item checkboxes for partial cancel
+  const itemList=o.items.map((it,i)=>
+    `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">
+      <input type="checkbox" id="cit-${i}" value="${i}" style="width:16px;height:16px;cursor:pointer">
+      <label for="cit-${i}" style="font-size:13px;cursor:pointer;flex:1">${it.color} ${it.shape} — ${parseFloat(it.kg).toFixed(2)} kg</label>
+    </div>`
+  ).join('');
+
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:14px;padding:20px 22px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Cancel Order — ${o.party}</div>
+      <div style="font-size:12px;color:#888;margin-bottom:14px">${invLabel(o.invNum)} · ${fmtDate(o.date)}</div>
+      <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:8px">Select items to cancel (or cancel entire order):</div>
+      <div style="margin-bottom:14px">${itemList}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+        <button onclick="this.closest('.cancel-modal').remove()" 
+          style="padding:8px 16px;border-radius:8px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-size:13px">Keep</button>
+        <button onclick="cancelSelectedItems(${id},this.closest('.cancel-modal'))"
+          style="padding:8px 16px;border-radius:8px;border:1.5px solid #fed7aa;background:#fff7ed;color:#c2410c;cursor:pointer;font-size:13px;font-weight:600">✕ Cancel Selected Items</button>
+        <button onclick="cancelFullOrder(${id},this.closest('.cancel-modal'))"
+          style="padding:8px 16px;border-radius:8px;border:none;background:#dc2626;color:#fff;cursor:pointer;font-size:13px;font-weight:600">✕ Cancel Entire Order</button>
+      </div>
+    </div>`;
+  modal.className='cancel-modal';
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
+
+function cancelItemForParty(party, color, shape){
+  if(!confirm(`Cancel ${color} ${shape} for ${party}?`)) return;
+  // Cancel this item across all pending orders for this party
+  let cancelled=0;
+  orders.filter(o=>o.status==='Pending'&&o.party===party).forEach(o=>{
+    o.items.forEach(i=>{
+      if(i.color===color&&i.shape===shape&&!i.cancelled){
+        i.cancelled=true;
+        cancelled++;
+      }
+    });
+    // If all items cancelled, mark order as cancelled
+    if(o.items.every(it=>it.cancelled)) o.status='Cancelled';
+  });
+  saveAll();
+  renderProduction();
+  renderOrders();
+  showSaveToast(`${color} ${shape} cancelled for ${party}`);
+}
+
+function restoreOrder(id){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  o.status='Pending';
+  o.items=o.items.map(it=>({...it,cancelled:false}));
+  saveAll();renderOrders();renderProduction();
+  showSaveToast('Order restored');
+}
+
+function cancelFullOrder(id, modal){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  o.status='Cancelled';
+  if(modal)modal.remove();
+  saveAll();renderOrders();renderProduction();
+  showSaveToast('Order cancelled');
+}
+
+function cancelSelectedItems(id, modal){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  const checkboxes=modal.querySelectorAll('input[type=checkbox]:checked');
+  if(!checkboxes.length){alert('Please select at least one item to cancel.');return;}
+  const cancelIdx=new Set([...checkboxes].map(c=>parseInt(c.value)));
+  // Mark cancelled items
+  o.items=o.items.map((it,i)=>cancelIdx.has(i)?{...it,cancelled:true}:it);
+  // If all items cancelled, cancel whole order
+  if(o.items.every(it=>it.cancelled)) o.status='Cancelled';
+  if(modal)modal.remove();
+  saveAll();renderOrders();renderProduction();
+  showSaveToast(cancelIdx.size===o.items.length?'Order cancelled':'Items cancelled');
+}
+
+let showCancelled=false;
+function toggleCancelledOrders(){
+  showCancelled=!showCancelled;
+  renderOrders();
 }
 
 // ============================================================
@@ -1711,7 +2182,9 @@ function getInvItems(){
   return [...document.querySelectorAll('#inv-items-container .item-row')].map(r=>{
     const combos=r.querySelectorAll('.combo-input');
     const ins=r.querySelectorAll('input[type="number"]');
-    return{color:(combos[0]?.value||'').trim(),shape:(combos[1]?.value||'').trim(),kg:parseFloat(ins[0]?.value)||0,price:parseFloat(ins[1]?.value)||0};
+    return{color:(combos[0]?.value||'').trim().toUpperCase(),
+           shape:(combos[1]?.value||'').trim().toLowerCase(),
+           kg:parseFloat(ins[0]?.value)||0,price:parseFloat(ins[1]?.value)||0};
   }).filter(i=>i.color&&i.shape);
 }
 function openPartyCombo(inp){
@@ -1745,7 +2218,8 @@ function updateInvFormTotal(){
   const items=getInvItems();
   const t=Math.round(items.reduce((s,i)=>s+(parseFloat(i.kg||0)*parseFloat(i.price||0)),0));
   const w=items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
-  document.getElementById('inv-form-total').textContent=fmt(t);
+  const extraAmt=parseFloat((document.getElementById('if-charge-amt')||{value:0}).value||0);
+  document.getElementById('inv-form-total').textContent=fmt(t+extraAmt);
   const wEl=document.getElementById('inv-form-weight');
   if(wEl)wEl.textContent=w.toFixed(2)+' kg';
 }
@@ -1759,12 +2233,27 @@ function resetInvForm(){
   document.getElementById('inv-items-container').innerHTML='';
   const rem=document.getElementById('if-remarks');
   if(rem)rem.value='';
+  const bagsEl=document.getElementById('if-bags');
+  if(bagsEl)bagsEl.value='';
+  const cl=document.getElementById('if-charge-label');
+  if(cl)cl.value='';
+  const ca=document.getElementById('if-charge-amt');
+  if(ca)ca.value='';
   addInvItemRow();
 }
 function cancelInvForm(){resetInvForm();}
 function loadInvIntoForm(invId){
   const inv=invoices.find(x=>x.id===invId);if(!inv)return;
   editInvId=invId;
+  // Switch to New Invoice tab
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  ['orders','invoices','invlist','catalog','production','reports'].forEach(id=>{
+    const el=document.getElementById('tab-'+id);
+    if(el) el.classList.toggle('active',id==='invoices');
+  });
+  document.querySelectorAll('.tab').forEach(b=>{
+    if(b.textContent.trim()==='New Invoice') b.classList.add('active');
+  });
   document.getElementById('inv-form-title').textContent='Edit Invoice — '+invNumLabel(inv.serial);
   document.getElementById('save-inv-btn').textContent='Update invoice';
   const pInput=document.getElementById('if-party-input');
@@ -1772,6 +2261,12 @@ function loadInvIntoForm(invId){
   document.getElementById('if-date').value=inv.date;
   const remEl=document.getElementById('if-remarks');
   if(remEl)remEl.value=inv.remarks||'';
+  const bagsLoadEl=document.getElementById('if-bags');
+  if(bagsLoadEl)bagsLoadEl.value=inv.bags||'';
+  const clEl=document.getElementById('if-charge-label');
+  if(clEl)clEl.value=inv.chargeLabel||'';
+  const caEl=document.getElementById('if-charge-amt');
+  if(caEl)caEl.value=inv.chargeAmt||'';
   document.getElementById('inv-items-container').innerHTML='';
   (inv.items||[]).forEach(i=>addInvItemRow(i));
   if(!(inv.items||[]).length)addInvItemRow();
@@ -1784,19 +2279,29 @@ function saveInvoice(){
   const date=document.getElementById('if-date').value;
   const items=getInvItems();
   const remarks=(document.getElementById('if-remarks').value||'').trim();
+  const chargeLabel=(document.getElementById('if-charge-label').value||'').trim();
+  const chargeAmt=parseFloat(document.getElementById('if-charge-amt').value||0)||0;
+  const bags=parseInt(document.getElementById('if-bags').value||0)||0;
   if(!party||!items.length){alert('Select a party and add at least one item.');return;}
   if(editInvId){
     const inv=invoices.find(x=>x.id===editInvId);
-    if(inv){inv.party=party;inv.date=date;inv.items=items;inv.remarks=remarks;}
+    if(inv){inv.party=party;inv.date=date;inv.items=items;inv.remarks=remarks;inv.chargeLabel=chargeLabel;inv.chargeAmt=chargeAmt;inv.bags=bags;}
   } else {
-    // Always use max serial + 1 to avoid duplicates
     const maxSerial=invoices.reduce((m,i)=>Math.max(m,i.serial||0),0);
     if(nextInvoiceNum<=maxSerial) nextInvoiceNum=maxSerial+1;
     if(nextInvoiceNum<590) nextInvoiceNum=590;
-    invoices.push({id:Date.now(),serial:nextInvoiceNum++,party,date,items,remarks,orderIds:[]});
+    invoices.push({id:Date.now(),serial:nextInvoiceNum++,party,date,items,remarks,chargeLabel,chargeAmt,bags,orderIds:[]});
   }
   resetInvForm();
   saveAll();renderInvoiceList();
+  setSyncStatus('saving','☁ Saving...');
+  // Switch to invoice list after saving
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab')[2].classList.add('active');
+  ['orders','invoices','invlist','catalog','production','reports'].forEach((id,i)=>{
+    const el=document.getElementById('tab-'+id);
+    if(el)el.classList.toggle('active',id==='invlist');
+  });
 }
 function saveCourier(id,val){
   const inv=invoices.find(x=>x.id==id);
@@ -1804,6 +2309,16 @@ function saveCourier(id,val){
     inv.courier=val.trim();
     saveAll();
     renderInvoiceList();
+    // Also save courier to separate Firebase doc for protection
+    if(window._firebaseReady && window._firestore && window._firestore.COURIER_DOC){
+      const {setDoc, getDoc, COURIER_DOC} = window._firestore;
+      getDoc(COURIER_DOC).then(snap=>{
+        const existing = snap.exists() ? snap.data() : {};
+        existing[String(inv.serial)] = inv.courier;
+        return setDoc(COURIER_DOC, existing);
+      }).then(()=>showSaveToast('Courier saved'))
+        .catch(e=>console.error('Courier save failed:',e));
+    }
   }
 }
 function delInvoice(invId){
@@ -1819,16 +2334,43 @@ function renderInvoiceList(){
     document.getElementById('si-amount').textContent='₹0';return;}
   empty.style.display='none';
   const invDateFilter=(document.getElementById('inv-date-filter')||{value:''}).value;
+  const invPartyFilter=(document.getElementById('inv-party-filter')||{value:''}).value;
+  const invItemSearch=(document.getElementById('inv-item-search')||{value:''}).value.trim().toLowerCase();
   let filtInvoices=invDateFilter?invoices.filter(i=>i.date===invDateFilter):invoices;
-  const sorted=[...filtInvoices].sort((a,b)=>b.date.localeCompare(a.date)||(b.serial-a.serial));
+  if(invPartyFilter) filtInvoices=filtInvoices.filter(i=>i.party===invPartyFilter);
+  if(invItemSearch) filtInvoices=filtInvoices.filter(inv=>
+    (inv.items||[]).some(i=>i.color.toLowerCase().includes(invItemSearch)||i.shape.toLowerCase().includes(invItemSearch))
+  );
+  // Populate party dropdown
+  const invPartyEl=document.getElementById('inv-party-filter');
+  if(invPartyEl){
+    const cur=invPartyEl.value;
+    const allP=[...new Set(invoices.map(i=>i.party))].sort();
+    invPartyEl.innerHTML='<option value="">All Parties</option>'+allP.map(p=>`<option value="${p}" ${p===cur?'selected':''}}>${p}</option>`).join('');
+  }
+  let sorted=[...filtInvoices];
+  if(invSort==='date') sorted.sort((a,b)=>b.date.localeCompare(a.date)||(b.serial-a.serial));
+  else if(invSort==='party') sorted.sort((a,b)=>a.party.localeCompare(b.party));
+  else if(invSort==='amt') sorted.sort((a,b)=>{
+    const aA=Math.round((a.items||[]).reduce((s,i)=>s+(i.kg*i.price),0));
+    const bA=Math.round((b.items||[]).reduce((s,i)=>s+(i.kg*i.price),0));
+    return bA-aA;
+  });
+  else if(invSort==='kg') sorted.sort((a,b)=>{
+    const kgA=(a.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    const kgB=(b.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    return kgB-kgA;
+  });
   let grand=0;
   tbody.innerHTML=sorted.map((inv,idx)=>{
-    const amt=Math.round((inv.items||[]).reduce((s,i)=>s+(i.kg*i.price),0));
+    const amt=Math.round((inv.items||[]).reduce((s,i)=>s+(i.kg*i.price),0))+parseFloat(inv.chargeAmt||0);
+    const totalKg=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
     grand+=amt;
     return `<tr>
       <td style="color:#888;font-size:12px">${invNumLabel(inv.serial)}</td>
       <td style="font-weight:600">${inv.party}</td>
       <td style="color:#888">${fmtDate(inv.date)}</td>
+      <td style="color:#2563eb;font-weight:600">${totalKg.toFixed(2)}</td>
       <td>${fmt(amt)}</td>
       <td style="white-space:nowrap">
   <input type="text" value="${(inv.courier||'').replace(/"/g,'&quot;')}" placeholder="courier..." id="courier-${inv.id}" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:6px;width:110px">
@@ -1836,7 +2378,8 @@ function renderInvoiceList(){
 </td>
       <td><div style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="btn btn-sm" onclick="loadInvIntoForm(${inv.id})">Edit</button>
-        <button class="btn btn-sm btn-primary" onclick="viewInvoice(${inv.id})">Print</button>
+        <button class="btn btn-sm" onclick="printPOSDirect(${inv.id})" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">🧾 POS</button>
+        <button class="btn btn-sm btn-primary" onclick="viewInvoice(${inv.id})">A4</button>
         <button class="btn btn-sm" onclick="shareInvWhatsApp(${inv.id})" style="background:#25D366;color:#fff;border-color:#25D366">💬</button>
         <button class="btn btn-sm btn-danger" onclick="delInvoice(${inv.id})">Delete</button>
       </div></td>
@@ -1855,14 +2398,23 @@ let invReturnTab='invoices';
 function viewInvoice(invId){
   currentPosInvId=invId;
   const inv=invoices.find(x=>x.id===invId);if(!inv)return;
+  // Hide all tabs
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  ['orders','invoices','invlist','catalog','production','reports'].forEach(id=>{
+    const el=document.getElementById('tab-'+id);
+    if(el) el.classList.remove('active');
+  });
   const items=inv.items||[];
   const rows=items.map(i=>`<tr>
     <td>${i.color}</td><td>${i.shape}</td>
     <td style="text-align:center">${fmtKg(i.kg)}</td>
     <td style="text-align:right">${fmt(i.price)}/kg</td>
-    <td style="text-align:right">${fmt(i.kg*i.price)}</td>
+    <td style="text-align:right">${fmt(Math.round(i.kg*i.price))}</td>
   </tr>`).join('');
-  const grand=Math.round(items.reduce((s,i)=>s+(i.kg*i.price),0));
+  const itemsTotal=Math.round(items.reduce((s,i)=>s+(i.kg*i.price),0));
+  const chargeAmt=parseFloat(inv.chargeAmt||0);
+  const chargeLabel=inv.chargeLabel||'Extra Charges';
+  const grand=itemsTotal+chargeAmt;
   document.getElementById('inv-content').innerHTML=`
     <div style="margin-bottom:18px">
       <div class="inv-to-name" style="font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:4px">${inv.party}</div>
@@ -1879,6 +2431,8 @@ function viewInvoice(invId){
       <tbody>${rows}</tbody>
     </table>
     <div class="inv-total-box"><div class="inv-total-inner">
+      ${chargeAmt>0?`<div class="inv-total-row"><span>Items Total</span><span>${fmt(itemsTotal)}</span></div>
+      <div class="inv-total-row"><span>${chargeLabel}</span><span>+ ${fmt(chargeAmt)}</span></div>`:''}
       <div class="inv-total-row grand"><span>Total</span><span>${fmt(grand)}</span></div>
     </div></div>
     ${inv.remarks?`<div style="margin-top:24px;padding:12px 14px;background:#f8f9fa;border-radius:8px;border-left:3px solid #2563eb">
@@ -1898,8 +2452,15 @@ function closeInvoice(){
   document.getElementById('inv-content').closest('.inv-wrap').style.display='';
   document.body.classList.remove('pos-mode');
   currentPosInvId=null;
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===1));
-  ['orders','invoices','catalog','production'].forEach((id,i)=>document.getElementById('tab-'+id).classList.toggle('active',i===1));
+  // Return to Invoice List tab
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  ['orders','invoices','invlist','catalog','production','reports'].forEach(id=>{
+    const el=document.getElementById('tab-'+id);
+    if(el) el.classList.toggle('active',id==='invlist');
+  });
+  document.querySelectorAll('.tab').forEach(b=>{
+    if(b.textContent.trim()==='Invoice List') b.classList.add('active');
+  });
   renderInvoiceList();
 }
 
@@ -2040,7 +2601,7 @@ function editOrderFromAnywhere(id){
 // ============================================================
 let prodView='item'; // 'item' or 'party'
 
-function setToday(){ renderProduction(); } // kept for renderAll compatibility
+function setToday(){ renderProduction(); }
 
 function setProdView(v){
   prodView=v;
@@ -2074,7 +2635,7 @@ function renderProduction(){
   // ordered[color||shape] = {totalKg, parties:{name->kg}, dates:[]}
   const ordByItem={};
   orders.filter(o=>o.status==='Pending').forEach(o=>{
-    o.items.forEach(i=>{
+    o.items.filter(i=>!i.cancelled).forEach(i=>{
       const key=i.color+'||'+i.shape;
       if(!ordByItem[key])ordByItem[key]={totalKg:0,parties:{},dates:[]};
       ordByItem[key].totalKg+=parseFloat(i.kg||0);
@@ -2103,16 +2664,28 @@ function renderProduction(){
   });
 
   // ── Build raw item cards ──────────────────────────────────────
+  // Correct approach: net per item = SUM of per-party nets (each capped at 0)
+  // This prevents over-invoiced parties from reducing other parties' pending
   const rawCards=[];
   let totalOrderKg=0, totalInvKg=0, totalNetKg=0;
   Object.entries(ordByItem).forEach(([key,v])=>{
-    const invKg=invByItem[key]||0;
-    const net=v.totalKg-invKg;
-    totalOrderKg+=v.totalKg; totalInvKg+=invKg;
-    if(net>0.001){
-      totalNetKg+=net;
+    const pendingParties={};
+    let itemNet=0;
+    let itemInvKg=0;
+    Object.entries(v.parties).forEach(([party,ordKg])=>{
+      const pInvKg=(invByPartyItem[party]&&invByPartyItem[party][key])||0;
+      const pNet=Math.max(0, ordKg-pInvKg); // cap at 0 — no negative
+      itemInvKg+=Math.min(pInvKg, ordKg);   // only count invoiced up to ordered
+      itemNet+=pNet;
+      if(pNet>=1.0) pendingParties[party]=pNet;
+      else itemNet-=pNet; // treat <1kg as complete, remove from net
+    });
+    totalOrderKg+=v.totalKg;
+    totalInvKg+=itemInvKg;
+    if(itemNet>=1.0){
+      totalNetKg+=itemNet;
       const [color,shape]=key.split('||');
-      rawCards.push({color,shape,ordKg:v.totalKg,invKg,net,parties:v.parties,dates:v.dates});
+      rawCards.push({color,shape,ordKg:v.totalKg,invKg:itemInvKg,net:itemNet,parties:pendingParties,dates:v.dates});
     }
   });
   // add invoiced-only items to total
@@ -2212,7 +2785,7 @@ function renderProduction(){
       const itemEntries=Object.values(data.items);
       let rows=itemEntries.map(it=>{
         const net=it.ordKg-it.invKg;
-        if(net<=0.001)return '';
+        if(net<1.0)return '';
         return `<tr>
           <td style="padding:6px 8px;font-size:12px;font-weight:600">${it.color}</td>
           <td style="padding:6px 8px;font-size:12px;color:#888">${it.shape}</td>
@@ -2224,6 +2797,14 @@ function renderProduction(){
       if(!rows)return '';
       const totalNet=itemEntries.reduce((s,i)=>s+Math.max(0,i.ordKg-i.invKg),0);
       const datesStr=data.dates.sort().join(', ');
+      // Get order ids for this party
+      const partyOrderIds=orders.filter(o=>o.status='Pending'&&o.party===party).map(o=>o.id);
+      const orderBtns=orders.filter(o=>o.status==='Pending'&&o.party===party).map(o=>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f8f8f8">
+          <span style="font-size:12px;color:#666">${invLabel(o.invNum)} · ${fmtDate(o.date)}</span>
+          <button onclick="cancelOrderPrompt(${o.id})" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1.5px solid #fed7aa;background:#fff7ed;color:#c2410c;cursor:pointer;font-weight:600">✕ Cancel</button>
+        </div>`
+      ).join('');
       return `<div class="party-pending-card" style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div>
@@ -2235,6 +2816,7 @@ function renderProduction(){
             <div style="font-size:11px;color:#aaa">net due</div>
           </div>
         </div>
+
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="border-bottom:1.5px solid #f0f0f0">
             <th style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;padding:3px 8px;text-align:left">Color</th>
@@ -2281,7 +2863,7 @@ function exportPendingXLS(){
   Object.values(ordByItem).forEach(v=>{
     const invKg=invByItem[v.color+'||'+v.shape]||0;
     const net=v.totalKg-invKg;
-    if(net>0.001) itemRows.push([v.color,v.shape,v.totalKg,invKg,net,
+    if(net>=1.0) itemRows.push([v.color,v.shape,v.totalKg,invKg,net,
       Object.entries(v.parties).map(([p,kg])=>p+':'+kg+'kg').join(', '),
       v.dates.sort().join(', ')]);
   });
@@ -2311,7 +2893,7 @@ function exportPendingXLS(){
     Object.values(data.items).forEach(it=>{
       const invKg=(invByPartyItem[party]&&invByPartyItem[party][it.color+'||'+it.shape])||0;
       const net=it.ordKg-invKg;
-      if(net>0.001) partyRows.push([party,it.color,it.shape,it.ordKg,invKg,net,data.dates.sort().join(', ')]);
+      if(net>=1.0) partyRows.push([party,it.color,it.shape,it.ordKg,invKg,net,data.dates.sort().join(', ')]);
     });
   });
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(partyRows),'Party-wise');
@@ -2480,12 +3062,21 @@ function printOrderPOS(id){
 // POS PRINT
 // ============================================================
 let currentPosInvId=null;
+
+function printPOSDirect(invId){
+  currentPosInvId=invId;
+  printPOS();
+}
+
 function printPOS(){
   if(!currentPosInvId)return;
   const inv=invoices.find(x=>x.id===currentPosInvId);if(!inv)return;
   // Build POS content
   const items=inv.items||[];
-  const grand=Math.round(items.reduce((s,i)=>s+(i.kg*i.price),0));
+  const itemsGrand=Math.round(items.reduce((s,i)=>s+(i.kg*i.price),0));
+  const posChargeAmt=parseFloat(inv.chargeAmt||0);
+  const posChargeLabel=inv.chargeLabel||'Extra';
+  const grand=itemsGrand+posChargeAmt;
   const dashes='--------------------------------';
   // Helper to get color display name with alias
   function colorDisplay(colorCode){
@@ -2514,6 +3105,7 @@ function printPOS(){
     <hr class="pos-divider">
     ${itemRows}
     <hr class="pos-divider">
+    ${posChargeAmt>0?`<div class="pos-row"><span>${posChargeLabel}</span><span>${Math.round(posChargeAmt)}</span></div>`:''}
     <hr class="pos-divider">
     <div class="pos-row bold">${totalKg.toFixed(2)} / ${Math.round(grand)}${inv.remarks?' / '+inv.remarks:''}${inv.courier?' / '+inv.courier:''}</div>
     <hr class="pos-divider">
@@ -2703,6 +3295,124 @@ function importFromXLS(input){
 // ============================================================
 // TALLY PRIME XML EXPORT
 // ============================================================
+function openDispatchRegister(){
+  document.getElementById('dr-from-inv').value='';
+  document.getElementById('dr-to-inv').value='';
+  document.getElementById('dr-from-date').value='';
+  document.getElementById('dr-to-date').value='';
+  document.getElementById('dr-preview').innerHTML='<div style="color:#bbb;font-size:12px;text-align:center;padding:20px">Set filters above and click Preview</div>';
+  document.getElementById('modal-dispatch').classList.add('open');
+}
+
+function getDispatchData(){
+  const fromInv=parseInt(document.getElementById('dr-from-inv').value)||0;
+  const toInv=parseInt(document.getElementById('dr-to-inv').value)||99999;
+  const fromDate=document.getElementById('dr-from-date').value;
+  const toDate=document.getElementById('dr-to-date').value;
+  let filtered=[...invoices];
+  if(fromInv) filtered=filtered.filter(i=>i.serial>=fromInv);
+  if(toInv<99999) filtered=filtered.filter(i=>i.serial<=toInv);
+  if(fromDate) filtered=filtered.filter(i=>i.date>=fromDate);
+  if(toDate) filtered=filtered.filter(i=>i.date<=toDate);
+  return filtered.sort((a,b)=>a.serial-b.serial);
+}
+
+function previewDispatch(){
+  const data=getDispatchData();
+  if(!data.length){
+    document.getElementById('dr-preview').innerHTML='<div style="color:#bbb;text-align:center;padding:20px">No invoices found for selected range</div>';
+    return;
+  }
+  const totalWt=data.reduce((s,inv)=>{
+    const kg=(inv.items||[]).reduce((ss,i)=>ss+parseFloat(i.kg||0),0);
+    return s+kg;
+  },0);
+  const totalBags=data.reduce((s,inv)=>s+(parseInt(inv.bags||0)),0);
+  const rows=data.map(inv=>{
+    const kg=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    return `<tr style="border-bottom:1px solid #ddd;height:32px">
+      <td style="padding:4px 8px;vertical-align:middle">${fmtDate(inv.date)}</td>
+      <td style="padding:4px 8px;vertical-align:middle">${String(inv.serial).padStart(4,'0')}</td>
+      <td style="padding:4px 8px;vertical-align:middle;font-weight:600">${inv.party}</td>
+      <td style="padding:4px 8px;vertical-align:middle;text-align:center">${kg.toFixed(2)}</td>
+      <td style="padding:4px 8px;vertical-align:middle;text-align:center">${inv.bags||''}</td>
+      <td style="padding:4px 8px;vertical-align:middle">${inv.remarks||''}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('dr-preview').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:2px solid #000;border-top:2px solid #000">
+        <th style="padding:5px 8px;text-align:left;font-weight:600;font-size:11px">Date</th>
+        <th style="padding:5px 8px;text-align:left;font-weight:600;font-size:11px">Inv#</th>
+        <th style="padding:5px 8px;text-align:left;font-weight:600;font-size:11px">Party</th>
+        <th style="padding:5px 8px;text-align:center;font-weight:600;font-size:11px">WT</th>
+        <th style="padding:5px 8px;text-align:center;font-weight:600;font-size:11px">Bags</th>
+        <th style="padding:5px 8px;text-align:left;font-weight:600;font-size:11px">Remarks</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr style="border-top:2px solid #000">
+        <td colspan="3" style="padding:5px 8px;font-weight:700;font-size:12px">Total — ${data.length} invoices</td>
+        <td style="padding:5px 8px;text-align:center;font-weight:700">${totalWt.toFixed(2)}</td>
+        <td style="padding:5px 8px;text-align:center;font-weight:700">${totalBags||''}</td>
+        <td></td>
+      </tr></tfoot>
+    </table>`;
+}
+
+function printDispatch(){
+  const data=getDispatchData();
+  if(!data.length){alert('No invoices found for selected range.');return;}
+  const totalWt=data.reduce((s,inv)=>{
+    const kg=(inv.items||[]).reduce((ss,i)=>ss+parseFloat(i.kg||0),0);
+    return s+kg;
+  },0);
+  const totalBags=data.reduce((s,inv)=>s+(parseInt(inv.bags||0)),0);
+  const rows=data.map(inv=>{
+    const kg=(inv.items||[]).reduce((s,i)=>s+parseFloat(i.kg||0),0);
+    return `<tr style="border-bottom:1px solid #bbb;height:30mm">
+      <td style="padding:0 8px;vertical-align:middle;font-size:13px">${fmtDate(inv.date)}</td>
+      <td style="padding:0 8px;vertical-align:middle;font-size:13px">${String(inv.serial).padStart(4,'0')}</td>
+      <td style="padding:0 8px;vertical-align:middle;font-size:13px;font-weight:600">${inv.party}</td>
+      <td style="padding:0 8px;vertical-align:middle;text-align:center;font-size:13px">${kg.toFixed(2)}</td>
+      <td style="padding:0 8px;vertical-align:middle;text-align:center;font-size:13px">${inv.bags||''}</td>
+      <td style="padding:0 8px;vertical-align:middle;font-size:13px">${inv.remarks||''}</td>
+    </tr>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+      body{font-family:Arial,sans-serif;margin:0;padding:15mm;box-sizing:border-box}
+      table{width:100%;border-collapse:collapse;table-layout:fixed}
+      @page{size:A4;margin:15mm}
+    </style>
+  </head><body>
+    <table>
+      <tbody>
+        <tr style="border-top:2px solid #000;border-bottom:2px solid #000">
+          <td style="padding:6px 8px;font-weight:700;font-size:13px;width:10%">Date</td>
+          <td style="padding:6px 8px;font-weight:700;font-size:13px;width:10%">Inv</td>
+          <td style="padding:6px 8px;font-weight:700;font-size:13px;width:36%">Party Name</td>
+          <td style="padding:6px 8px;font-weight:700;font-size:13px;text-align:center;width:12%">WT (kg)</td>
+          <td style="padding:6px 8px;font-weight:700;font-size:13px;text-align:center;width:10%">Bags</td>
+          <td style="padding:6px 8px;font-weight:700;font-size:13px;width:22%">Remarks</td>
+        </tr>
+        ${rows}
+        <tr style="border-top:2px solid #000">
+          <td colspan="3" style="padding:8px;font-weight:700;font-size:13px">Total &nbsp; ${data.length} invoices</td>
+          <td style="padding:8px;text-align:center;font-weight:700;font-size:14px">${totalWt.toFixed(2)}</td>
+          <td style="padding:8px;text-align:center;font-weight:700;font-size:14px">${totalBags||''}</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </body></html>`;
+  const win=window.open('','_blank','width=900,height=700');
+  if(!win){alert('Please allow popups.');return;}
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{win.print();setTimeout(()=>win.close(),1000);},600);
+}
+
 function exportTallyXML(){
   if(!invoices.length){alert('No invoices to export.');return;}
 
@@ -3029,7 +3739,7 @@ function rptPending(fOrders,fInvoices,el){
   }));
   const rows=Object.values(pm)
     .map(d=>({...d,netKg:d.ordKg-d.invKg}))
-    .filter(d=>d.netKg>0.001)
+    .filter(d=>d.netKg>=1.0)
     .sort((a,b)=>b.netKg-a.netKg)
     .map(d=>[
       `<strong>${d.party}</strong>`,
@@ -3147,7 +3857,7 @@ function exportReportXLS(){
     pendMap[k].invKg+=parseFloat(i.kg||0);
   }));
   const pRows=[['Party','Color','Shape','Ordered kg','Invoiced kg','Net Pending kg']];
-  Object.values(pendMap).filter(d=>d.ordKg-d.invKg>0.001).sort((a,b)=>(b.ordKg-b.invKg)-(a.ordKg-a.invKg)).forEach(d=>pRows.push([d.party,d.color,d.shape,+d.ordKg.toFixed(2),+d.invKg.toFixed(2),+(d.ordKg-d.invKg).toFixed(2)]));
+  Object.values(pendMap).filter(d=>d.ordKg-d.invKg>=1.0).sort((a,b)=>(b.ordKg-b.invKg)-(a.ordKg-a.invKg)).forEach(d=>pRows.push([d.party,d.color,d.shape,+d.ordKg.toFixed(2),+d.invKg.toFixed(2),+(d.ordKg-d.invKg).toFixed(2)]));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pRows),'Pending');
 
   // Item-wise
@@ -3169,7 +3879,7 @@ function shareInvWhatsApp(invId){
   if(!inv)return;
   const items=inv.items||[];
   const totalKg=items.reduce((s,i)=>s+parseFloat(i.kg||0),0);
-  const totalAmt=items.reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0);
+  const totalAmt=items.reduce((s,i)=>s+parseFloat(i.kg||0)*parseFloat(i.price||0),0)+parseFloat(inv.chargeAmt||0);
   const serialNum=String(inv.serial).padStart(4,'0');
   const line='- - - - - - - - - - - - - -';
   let msg=inv.party+'\n';
@@ -3219,6 +3929,17 @@ function shareInvoiceWhatsApp(){
   msg += line+'\n';
   if(inv.remarks) msg += inv.remarks+'\n';
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+function showSaveToast(msg,isError){
+  const existing=document.getElementById('save-toast');
+  if(existing)existing.remove();
+  const toast=document.createElement('div');
+  toast.id='save-toast';
+  toast.style.cssText='position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:10px;z-index:9999;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:opacity .3s;'+(isError?'background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca':'background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0');
+  toast.textContent=(isError?'❌ ':'✅ ')+msg;
+  document.body.appendChild(toast);
+  setTimeout(()=>{toast.style.opacity='0';setTimeout(()=>toast.remove(),300);},3000);
 }
 
 function showOrderWhatsApp(orderId){
@@ -3290,20 +4011,6 @@ function printReport(){
       .rpt-card{margin-bottom:14px}
       .rpt-card-hdr{background:#f0f4ff;padding:8px 12px;font-weight:700;font-size:13px;border-bottom:1px solid #dbeafe}
       @media print{@page{margin:10mm}}
-
-/* mobile removed */
-
-
-
-/* Setup screen */
-#setup-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999}
-.setup-box{background:#fff;border-radius:20px;padding:40px 36px;max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);text-align:center}
-.setup-logo{font-size:26px;font-weight:800;color:#1e3a5f;margin-bottom:4px}
-.setup-logo span{color:#2563eb}
-.setup-sub{font-size:13px;color:#999;margin-bottom:28px}
-.setup-btn{width:100%;padding:13px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px}
-.setup-btn:hover{background:#1d4ed8}
-.setup-err{color:#dc2626;font-size:13px;margin-top:10px;display:none}
     </style>
   </head><body>
     <div style="margin-bottom:12px">${stats}</div>
@@ -3436,6 +4143,73 @@ function sharePendingWhatsApp(mode){
 // ============================================================
 // INVOICE RECOVERY
 // ============================================================
+async function showAutoBackups(){
+  if(!window._firebaseReady || !window._firestore){alert('Firebase not connected.');return;}
+  const {db, doc, getDoc, BACKUP_COL} = window._firestore;
+  if(!BACKUP_COL){alert('Backup not configured.');return;}
+
+  // List last 10 backup slots
+  const slots=[];
+  for(let d=0;d<7;d++){
+    const date=new Date();
+    date.setDate(date.getDate()-d);
+    const dateStr=date.toISOString().split('T')[0];
+    ['evening','afternoon','morning'].forEach(slot=>{
+      slots.push(dateStr+'_'+slot);
+    });
+  }
+
+  // Check which backups exist
+  setSyncStatus('saving','☁ Loading backups...');
+  const found=[];
+  for(const key of slots.slice(0,15)){
+    try{
+      const snap=await getDoc(doc(db,BACKUP_COL,key));
+      if(snap.exists()){
+        const data=snap.data();
+        found.push({key, savedAt:data.savedAt, orders:(data.orders||[]).length, invoices:(data.invoices||[]).length});
+      }
+    }catch(e){}
+  }
+  setSyncStatus('','☁ Cloud');
+
+  if(!found.length){alert('No auto backups found yet.');return;}
+
+  const list=found.map((b,i)=>`${i+1}. ${b.key} — ${b.orders} orders, ${b.invoices} invoices
+   Saved: ${new Date(b.savedAt).toLocaleString()}`).join('
+
+');
+  const choice=prompt('Available backups:
+
+'+list+'
+
+Enter number to restore (or cancel):');
+  if(!choice)return;
+  const idx=parseInt(choice)-1;
+  if(idx<0||idx>=found.length){alert('Invalid choice.');return;}
+
+  if(!confirm('Restore from '+found[idx].key+'?
+This will replace current data.'))return;
+
+  const snap=await getDoc(doc(db,BACKUP_COL,found[idx].key));
+  if(snap.exists()){
+    const data=snap.data();
+    colors=data.colors||colors;
+    shapes=data.shapes||shapes;
+    orders=data.orders||orders;
+    parties=data.parties||parties;
+    invoices=data.invoices||invoices;
+    nextOid=data.nextOid||nextOid;
+    nextPaId=data.nextPaId||nextPaId;
+    nextInvNum=data.nextInvNum||nextInvNum;
+    nextInvoiceNum=data.nextInvoiceNum||nextInvoiceNum;
+    saveToBin();
+    renderAll();
+    closeModal('modal-admin');
+    alert('✅ Restored from '+found[idx].key+'!');
+  }
+}
+
 async function recoverInvoices(){
   let recovered = false;
 
